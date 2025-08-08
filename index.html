@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HAWLADER - Manufacturing Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Noto Sans Bengali', 'Inter', 'sans-serif'],
+            },
+            colors: {
+              'brand-sidebar': '#1e293b', // Slate 800
+              'brand-bg': '#0f172a', // Slate 950
+              'brand-primary': '#1e293b', // A bit lighter than bg, for primary elements
+              'dark-primary': '#1e293b', // Card backgrounds
+              'dark-secondary': '#334155', // Borders, secondary elements
+              'dark-tertiary': '#475569', // Hover states, tertiary elements
+              'brand-accent': '#f59e0b', // Amber 500
+              'brand-accent-hover': '#d97706', // Amber 600
+              'dark-text-primary': '#f8fafc', // Slate 50
+              'dark-text-secondary': '#94a3b8', // Slate 400
+            },
+            backgroundImage: {
+              'gradient-card': 'linear-gradient(145deg, #334155, #1e293b)',
+            }
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react": "https://esm.sh/react@^19.1.1",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "recharts": "https://esm.sh/recharts@^3.1.2"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-brand-bg font-sans text-dark-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
