@@ -88,6 +88,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const effectiveRole = currentUser?.role === 'admin' && simulatedRole ? simulatedRole : currentUser?.role;
   const isAdmin = effectiveRole === 'admin';
+  const isManager = effectiveRole === 'admin' || effectiveRole === 'manager';
 
   const login = useCallback(async (username: string, password?: string): Promise<{ success: boolean; message: string; }> => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
@@ -618,7 +619,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider value={{ 
         entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, login, logout, signUp, requestPasswordReset, resetPassword, updateUserRole, approveUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
-        isAdmin, simulatedRole, setSimulatedRole, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
+        isAdmin, isManager, simulatedRole, setSimulatedRole, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
         deleteDocument, deleteMultipleDocuments, getNewDocumentNumber, getEntryFinancials, getRevenueData, getLatestDeliveryDateForEntry, getRemainingQuantitiesForItem, registerBiometrics, loginWithBiometrics
     }}>
       {children}

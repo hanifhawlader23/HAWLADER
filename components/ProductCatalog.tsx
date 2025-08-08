@@ -1,10 +1,12 @@
 
+
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Button, Modal, Input, Textarea, Select, useToast, ConfirmationModal } from './ui';
 import { Product, Column } from '../types';
 import { SelectableTable } from './SelectableTable';
-import { FilterBar } from './FilterBar'; // Assuming you might want to filter products later
+import { ExportControls } from './ExportControls';
 
 const ProductForm: React.FC<{
     onClose: () => void;
@@ -77,7 +79,7 @@ export const ProductCatalogManager: React.FC = () => {
     }
 
     const getClientName = (clientId?: string) => {
-        if (!clientId) return <span className="text-xs text-dark-text-secondary">General</span>;
+        if (!clientId) return <span className="text-xs text-brand-text-secondary">General</span>;
         const client = clients.find(c => c.id === clientId);
         return client ? client.name : 'Unknown Client';
     }
@@ -102,11 +104,11 @@ export const ProductCatalogManager: React.FC = () => {
     };
     
     const columns: Column<Product>[] = [
-        { header: 'Code', accessor: 'code', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-dark-text-primary' },
+        { header: 'Code', accessor: 'code', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-brand-text-primary' },
         { header: 'Model Name', accessor: 'modelName', headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
         { header: 'For Client', accessor: (item) => getClientName(item.clientId), headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-semibold' },
         { header: 'Category', accessor: 'category', headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
-        { header: 'Price', accessor: (item) => `€${item.price.toFixed(2)}`, headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-semibold text-dark-text-primary' },
+        { header: 'Price', accessor: (item) => `€${item.price.toFixed(2)}`, headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-semibold text-brand-text-primary' },
     ];
     
     if (isAdmin) {
@@ -123,11 +125,26 @@ export const ProductCatalogManager: React.FC = () => {
         });
     }
 
+    const exportColumns = [
+        { title: 'Code', dataKey: 'code' as const },
+        { title: 'Model Name', dataKey: 'modelName' as const },
+        { title: 'For Client', dataKey: (item: Product) => {
+            if (!item.clientId) return 'General';
+            return clients.find(c => c.id === item.clientId)?.name || 'Unknown';
+        }},
+        { title: 'Category', dataKey: 'category' as const },
+        { title: 'Price (€)', dataKey: 'price' as const },
+        { title: 'Description', dataKey: 'description' as const },
+    ];
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-dark-text-primary">Product Catalog</h1>
-                {isAdmin && <Button onClick={handleAdd}>+ Add New Product</Button>}
+                <h1 className="text-3xl font-bold text-brand-text-primary">Product Catalog</h1>
+                <div className="flex items-center gap-2">
+                    <ExportControls data={productCatalog} columns={exportColumns} fileName="product_catalog" />
+                    {isAdmin && <Button onClick={handleAdd}>+ Add New Product</Button>}
+                </div>
             </div>
             <Card>
                  <SelectableTable 

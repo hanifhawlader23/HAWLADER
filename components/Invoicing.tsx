@@ -1,7 +1,9 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
-import { Entry, Status, Document, DocumentItem, DocumentType, Column, FilterState, EntryItem } from '../types';
+import { Entry, Status, Document, DocumentItem, DocumentType, Column, FilterState, EntryItem, DateRangePreset } from '../types';
 import { Button, Card, Input, Select, Badge, Modal } from './ui';
 import { DocumentEditor } from './InvoiceEditor';
 import { EntryDetailView } from './EntryDetailView';
@@ -18,6 +20,39 @@ interface InvoiceableEntry {
   status: Status;
   client: string;
 }
+
+const getDateRangeFromPreset = (preset: DateRangePreset): { start?: string; end?: string } => {
+    const today = new Date();
+    const toISODate = (d: Date) => {
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+    };
+    
+    const end = new Date();
+    let start = new Date();
+
+    switch (preset) {
+        case 'today':
+            break;
+        case 'yesterday':
+            start.setDate(today.getDate() - 1);
+            end.setDate(today.getDate() - 1);
+            break;
+        case 'last7':
+            start.setDate(today.getDate() - 6);
+            break;
+        case 'last15':
+            start.setDate(today.getDate() - 14);
+            break;
+        case 'last30':
+            start.setDate(today.getDate() - 29);
+            break;
+        case 'all':
+        default:
+            return {};
+    }
+    return { start: toISODate(start), end: toISODate(end) };
+};
 
 export const InvoiceWorkbench: React.FC = () => {
   const { entries, clients, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, isAdmin, documents } = useData();
@@ -127,6 +162,18 @@ export const InvoiceWorkbench: React.FC = () => {
 
     const taxAmount = (subtotal + surcharge) * (taxRate / 100);
     const total = subtotal + surcharge + taxAmount;
+    
+    let docStartDate: string | undefined;
+    let docEndDate: string | undefined;
+
+    if (filters.dateRange === 'custom') {
+        docStartDate = filters.startDate || undefined;
+        docEndDate = filters.endDate || undefined;
+    } else if (filters.dateRange !== 'all') {
+        const range = getDateRangeFromPreset(filters.dateRange);
+        docStartDate = range.start;
+        docEndDate = range.end;
+    }
 
     const tempDocument: Document = {
         id: 'new-draft',
@@ -140,6 +187,8 @@ export const InvoiceWorkbench: React.FC = () => {
         taxRate,
         taxAmount,
         total,
+        startDate: docStartDate,
+        endDate: docEndDate,
     };
 
     setDraftDocument(tempDocument);
@@ -153,7 +202,7 @@ export const InvoiceWorkbench: React.FC = () => {
   }
   
   const columns: Column<InvoiceableEntry>[] = [
-      { header: 'Code', accessor: 'code', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-dark-text-primary' },
+      { header: 'Code', accessor: 'code', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-brand-text-primary' },
       { header: 'Date', accessor: (item) => new Date(item.date).toLocaleDateString(), headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
       { header: 'Description', accessor: 'description', headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
       { header: 'Qty', accessor: 'qty', headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
@@ -164,11 +213,11 @@ export const InvoiceWorkbench: React.FC = () => {
     <>
       <Card>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-dark-text-primary">Invoice Workbench</h1>
+          <h1 className="text-3xl font-bold text-brand-text-primary">Invoice Workbench</h1>
           <Button onClick={() => { setSelectedEntryCodes([]); setFilters({ dateRange: 'all', clientId: 'all', startDate: '', endDate: '' }); }} variant="secondary">Start New</Button>
         </div>
         
-        <div className="space-y-4 bg-dark-tertiary p-4 rounded-lg">
+        <div className="space-y-4 bg-brand-secondary/50 p-4 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Select 
                 label="1. Select Document Type" 
@@ -194,7 +243,7 @@ export const InvoiceWorkbench: React.FC = () => {
               </Button>
             </div>
           </div>
-          <div className="pt-4 border-t border-dark-secondary">
+          <div className="pt-4 border-t border-brand-tertiary">
              <FilterBar clients={clients} onFilterChange={setFilters} />
           </div>
         </div>
@@ -202,7 +251,7 @@ export const InvoiceWorkbench: React.FC = () => {
 
       <div className="mt-6">
         <Card>
-          <h2 className="text-xl font-semibold text-dark-text-secondary mb-2">
+          <h2 className="text-xl font-semibold text-brand-text-secondary mb-2">
             Available Items for {clients.find(c=>c.id === filters.clientId)?.name || 'All Clients'}
           </h2>
           <SelectableTable 
@@ -216,7 +265,7 @@ export const InvoiceWorkbench: React.FC = () => {
             canSelect={isAdmin}
             renderBulkActions={(selectedIds) => {
                 setSelectedEntryCodes(selectedIds as number[]);
-                return <span className="text-sm font-semibold text-dark-text-primary">{selectedIds.length} entr{selectedIds.length > 1 ? 'ies' : ''} selected</span>
+                return <span className="text-sm font-semibold text-brand-text-primary">{selectedIds.length} entr{selectedIds.length > 1 ? 'ies' : ''} selected</span>
             }}
           />
         </Card>

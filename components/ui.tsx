@@ -1,4 +1,6 @@
-import React, { useState, useCallback, createContext, useContext } from 'react';
+
+import React, { useState, useCallback, createContext, useContext, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger';
@@ -6,11 +8,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button: React.FC<ButtonProps> = ({ children, className, variant = 'primary', size = 'md', ...props }) => {
-  const baseClasses = 'font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center shadow-lg hover:shadow-xl rounded-lg';
+  const baseClasses = 'font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center shadow-lg hover:shadow-xl rounded-lg';
   const variantClasses = {
-    primary: 'bg-brand-accent hover:bg-brand-accent-hover focus:ring-brand-accent',
-    secondary: 'bg-dark-secondary hover:bg-dark-tertiary focus:ring-slate-500',
-    danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    primary: 'bg-gradient-to-br from-brand-accent to-deep-rose text-brand-text-on-accent focus:ring-brand-accent border-deep-rose border-b-4 hover:border-b-2 active:border-b-0',
+    secondary: 'bg-brand-secondary hover:bg-brand-tertiary text-brand-text-primary focus:ring-brand-accent',
+    danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-warm-beige border-red-800 border-b-4 hover:border-b-2 active:border-b-0',
   };
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
@@ -18,9 +20,13 @@ export const Button: React.FC<ButtonProps> = ({ children, className, variant = '
     lg: 'px-6 py-3 text-lg',
   };
   return (
-    <button className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`} {...props}>
+    <motion.button 
+      whileHover={{ y: -2 }}
+      whileTap={{ y: 1 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`} {...props}>
       {children}
-    </button>
+    </motion.button>
   );
 };
 
@@ -31,7 +37,7 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ children, className, gradient = false }) => (
-  <div className={`rounded-xl shadow-lg p-6 ${gradient ? 'bg-gradient-card' : 'bg-dark-primary'} ${className}`}>{children}</div>
+  <motion.div className={`rounded-xl shadow-lg p-4 md:p-6 border border-brand-tertiary/50 ${gradient ? 'bg-gradient-card' : 'bg-brand-primary'} ${className}`}>{children}</motion.div>
 );
 
 interface ModalProps {
@@ -43,7 +49,6 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = '4xl' }) => {
-  if (!isOpen) return null;
   const sizeClasses = {
       md: 'max-w-md',
       lg: 'max-w-lg',
@@ -54,15 +59,30 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
       '5xl': 'max-w-5xl',
   }
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 backdrop-blur-sm">
-      <div className={`bg-brand-primary rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
-        <div className="flex justify-between items-center p-4 border-b border-dark-secondary">
-          <h2 className="text-xl font-bold text-dark-text-primary">{title}</h2>
-          <button onClick={onClose} className="text-dark-text-secondary hover:text-dark-text-primary text-3xl font-light">&times;</button>
-        </div>
-        <div className="p-6 overflow-y-auto">{children}</div>
-      </div>
-    </div>
+    <AnimatePresence>
+    {isOpen && (
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-deep-rose bg-opacity-30 z-50 flex justify-center items-center p-4 backdrop-blur-sm"
+        >
+            <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: -20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className={`bg-brand-primary rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}
+            >
+            <div className="flex justify-between items-center p-4 border-b border-brand-tertiary">
+              <h2 className="text-xl font-bold text-brand-text-primary">{title}</h2>
+              <button onClick={onClose} className="text-brand-text-secondary hover:text-brand-text-primary text-3xl font-light">&times;</button>
+            </div>
+            <div className="p-6 overflow-y-auto">{children}</div>
+            </motion.div>
+      </motion.div>
+    )}
+    </AnimatePresence>
   );
 };
 
@@ -77,17 +97,18 @@ export const Badge: React.FC<BadgeProps> = ({ children, className }) => (
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
+    unstyled?: boolean;
 }
-export const Input: React.FC<InputProps> = ({ label, id, ...props }) => {
-    const unstyled = !label;
+export const Input: React.FC<InputProps> = ({ label, id, unstyled, ...props }) => {
+    const isUnstyled = unstyled || !label;
     const baseClasses = 'block w-full sm:text-sm';
-    const styledClasses = 'px-3 py-2 bg-dark-secondary border border-dark-tertiary rounded-md shadow-sm text-dark-text-primary placeholder-slate-400 focus:outline-none focus:ring-brand-accent focus:border-brand-accent';
-    const unstyledClasses = 'bg-transparent text-black focus:outline-none focus:ring-0 rounded-sm p-1 -m-1 border-b border-transparent focus:border-gray-400';
+    const styledClasses = 'px-3 py-2 bg-brand-secondary border border-brand-tertiary rounded-md shadow-sm text-brand-text-primary placeholder-brand-text-secondary placeholder-opacity-70 focus:outline-none focus:ring-brand-accent focus:border-brand-accent';
+    const unstyledClasses = 'bg-transparent text-brand-text-primary focus:outline-none focus:ring-0 rounded-sm p-1 -m-1 border-b border-transparent focus:border-gray-400';
 
     return (
         <div>
-            {label && <label htmlFor={id} className="block text-sm font-medium text-dark-text-secondary mb-1">{label}</label>}
-            <input id={id} {...props} className={`${baseClasses} ${unstyled ? unstyledClasses : styledClasses} ${props.className}`} />
+            {label && <label htmlFor={id} className="block text-sm font-medium text-brand-text-secondary mb-1">{label}</label>}
+            <input id={id} {...props} className={`${baseClasses} ${isUnstyled ? unstyledClasses : styledClasses} ${props.className}`} />
         </div>
     );
 };
@@ -98,29 +119,77 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     valueColor?: string;
     className?: string;
 }
+
+const customArrow = `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23B76E79' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`;
+
 export const Select: React.FC<SelectProps> = ({ label, id, children, valueColor, className, ...props }) => (
     <div>
-        {label && <label htmlFor={id} className="block text-sm font-medium text-dark-text-secondary mb-1">{label}</label>}
-        <select id={id} {...props} className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border-dark-tertiary focus:outline-none focus:ring-brand-accent focus:border-brand-accent sm:text-sm rounded-md transition-colors bg-dark-secondary text-dark-text-primary ${className}`}>
-            {children}
-        </select>
+        {label && <label htmlFor={id} className="block text-sm font-medium text-brand-text-secondary mb-1">{label}</label>}
+        <div className="relative mt-1">
+            <select 
+                id={id} 
+                {...props} 
+                className={`
+                    appearance-none 
+                    block w-full 
+                    px-3 py-2 
+                    sm:text-sm 
+                    rounded-lg 
+                    border-2 border-brand-tertiary/50
+                    bg-gradient-to-br from-brand-primary via-brand-secondary to-brand-primary
+                    text-brand-text-primary 
+                    font-semibold
+                    shadow-lg 
+                    hover:border-brand-accent/70
+                    focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-brand-accent
+                    transition-all
+                    ${className}`
+                }
+                style={{
+                    backgroundImage: customArrow,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                }}
+            >
+                {children}
+            </select>
+        </div>
     </div>
 );
 
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
+    unstyled?: boolean;
 }
-export const Textarea: React.FC<TextareaProps> = ({ label, id, ...props }) => {
-    const unstyled = !label;
-    const baseClasses = 'mt-1 block w-full sm:text-sm';
-    const styledClasses = 'px-3 py-2 bg-dark-secondary border border-dark-tertiary rounded-md shadow-sm text-dark-text-primary placeholder-slate-400 focus:outline-none focus:ring-brand-accent focus:border-brand-accent';
-    const unstyledClasses = 'bg-transparent text-black focus:outline-none focus:ring-0 rounded-sm p-1 -m-1 resize-none border-b border-transparent focus:border-gray-400';
+export const Textarea: React.FC<TextareaProps> = ({ label, id, unstyled, ...props }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const isUnstyled = unstyled || !label;
+    
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto'; // Reset height
+            textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
+        }
+    }, [props.value]); // Re-run when value changes
+
+    const baseClasses = 'mt-1 block w-full sm:text-sm overflow-hidden';
+    const styledClasses = 'px-3 py-2 bg-brand-secondary border border-brand-tertiary rounded-md shadow-sm text-brand-text-primary placeholder-brand-text-secondary placeholder-opacity-70 focus:outline-none focus:ring-brand-accent focus:border-brand-accent';
+    const unstyledClasses = 'bg-transparent text-brand-text-primary focus:outline-none focus:ring-0 rounded-sm p-1 -m-1 resize-none border-b border-transparent focus:border-gray-400';
 
     return (
         <div>
-            {label && <label htmlFor={id} className="block text-sm font-medium text-dark-text-secondary mb-1">{label}</label>}
-            <textarea id={id} {...props} rows={unstyled ? 1 : 3} className={`${baseClasses} ${unstyled ? unstyledClasses : styledClasses} ${props.className}`} />
+            {label && <label htmlFor={id} className="block text-sm font-medium text-brand-text-secondary mb-1">{label}</label>}
+            <textarea
+                id={id}
+                ref={textareaRef}
+                {...props}
+                rows={1} // Start with one row
+                className={`${baseClasses} ${isUnstyled ? unstyledClasses : styledClasses} ${props.className}`}
+            />
         </div>
     );
 };
@@ -164,10 +233,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={title} size="md">
-      <div className="text-dark-text-primary">
+      <div className="text-brand-text-primary">
         {step === 1 ? (
           <>
-            <div className="text-dark-text-secondary">{message}</div>
+            <div className="text-brand-text-secondary">{message}</div>
             <div className="flex justify-end gap-4 mt-6">
               <Button variant="secondary" onClick={handleClose}>
                 Cancel
@@ -179,7 +248,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
           </>
         ) : (
           <>
-            <p className="text-dark-text-secondary">This action cannot be undone. To confirm, please type "<strong className="text-red-400">{confirmationWord}</strong>" in the box below.</p>
+            <p className="text-brand-text-secondary">This action cannot be undone. To confirm, please type "<strong className="text-red-500">{confirmationWord}</strong>" in the box below.</p>
             <Input 
               type="text" 
               value={inputValue}

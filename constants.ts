@@ -11,27 +11,48 @@ export const INITIAL_USERS: User[] = [
 ];
 
 export const STATUS_COLORS: Record<Status, string> = {
-  [Status.Recibida]: 'bg-yellow-200 text-yellow-800',
-  [Status.EnProceso]: 'bg-blue-200 text-blue-800',
-  [Status.Entregada]: 'bg-green-200 text-green-800',
-  [Status.Prefacturado]: 'bg-purple-200 text-purple-800',
+  [Status.Recibida]: 'bg-blue-500 text-white font-semibold',
+  [Status.EnProceso]: 'bg-yellow-400 text-deep-rose font-semibold',
+  [Status.Entregada]: 'bg-green-500 text-white font-semibold',
+  [Status.Prefacturado]: 'bg-sky-500 text-white font-semibold',
 };
 
 export const USER_COLORS: Record<string, string> = {
-    'admin@hawlader.eu': 'bg-red-200 text-red-800',
-    'asad@hawlader.eu': 'bg-blue-200 text-blue-800',
-    'hanif@hawlader.eu': 'bg-green-200 text-green-800',
-    'choton@hawlader.eu': 'bg-yellow-200 text-yellow-800',
-    'johurul@hawlader.eu': 'bg-purple-200 text-purple-800',
+    'admin@hawlader.eu': 'bg-rose-gold-base/20 text-deep-rose',
+    'asad@hawlader.eu': 'bg-light-rose-gold text-deep-rose',
+    'hanif@hawlader.eu': 'bg-rose-gold-base/30 text-deep-rose',
+    'choton@hawlader.eu': 'bg-metallic-rose text-deep-rose',
+    'johurul@hawlader.eu': 'bg-deep-rose/20 text-deep-rose',
 };
 
-export const CLIENT_COLORS: Record<string, string> = {
-    'AUSTRAL': 'bg-red-200 text-red-800',
-    'KON SPORT': 'bg-sky-200 text-sky-800',
-    'USOA': 'bg-indigo-200 text-indigo-800',
+export const CLIENT_COLOR_PALETTE: string[] = [
+    'bg-teal-500 text-white ring-teal-700',
+    'bg-indigo-500 text-white ring-indigo-700',
+    'bg-amber-500 text-white ring-amber-700',
+    'bg-lime-600 text-white ring-lime-800',
+    'bg-fuchsia-600 text-white ring-fuchsia-800',
+    'bg-cyan-500 text-white ring-cyan-700',
+    'bg-emerald-500 text-white ring-emerald-700',
+    'bg-violet-500 text-white ring-violet-700',
+    'bg-sky-500 text-white ring-sky-700',
+    'bg-rose-500 text-white ring-rose-700',
+];
+
+export const getClientColorClass = (clientName: string, allClients: {name: string}[]): string => {
+    // Sort clients alphabetically by name to ensure consistent color assignment
+    const sortedClients = [...allClients].sort((a, b) => a.name.localeCompare(b.name));
+    const clientIndex = sortedClients.findIndex(c => c.name === clientName);
+    
+    if (clientIndex === -1) {
+        // Fallback for unknown clients
+        return 'bg-gray-400 text-white ring-gray-600 ring-1 ring-inset';
+    }
+    const colorClass = CLIENT_COLOR_PALETTE[clientIndex % CLIENT_COLOR_PALETTE.length];
+    return `${colorClass} ring-1 ring-inset`;
 };
 
-export const CHART_COLORS = ['#f59e0b', '#16a34a', '#3b82f6', '#9333ea', '#db2777', '#ef4444', '#f97316', '#10b981', '#06b6d4'];
+
+export const CHART_COLORS = ['#B76E79', '#8B5E5A', '#D4A5A5', '#F6D1C1'];
 
 
 export const INITIAL_COMPANY_DETAILS: CompanyDetails = {

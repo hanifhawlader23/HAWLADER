@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -21,14 +21,14 @@
         .responsive-table tr {
           display: block;
           margin-bottom: 1rem;
-          border-bottom: 2px solid #334155; /* Corresponds to dark-secondary */
+          border-bottom: 2px solid #D4A5A5;
         }
         .responsive-table td {
           display: block;
           text-align: right;
           padding-left: 50%;
           position: relative;
-          border-bottom: 1px dotted #475569; /* Corresponds to dark-tertiary */
+          border-bottom: 1px dotted #D4A5A5;
         }
         .responsive-table td:last-child {
           border-bottom: 0;
@@ -42,32 +42,50 @@
           font-weight: 600; /* semibold */
           text-align: left;
           white-space: nowrap;
-          color: #94a3b8; /* Corresponds to dark-text-secondary */
+          color: #B76E79; 
         }
+      }
+
+      /* Animation Keyframes */
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 0; transform: translateY(20px); }
+        10%, 90% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in-out {
+          animation: fadeInOut 5s ease-in-out forwards;
       }
     </style>
     <script>
       tailwind.config = {
-        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
               sans: ['Noto Sans Bengali', 'Inter', 'sans-serif'],
             },
             colors: {
-              'brand-sidebar': '#1e293b', // Slate 800
-              'brand-bg': '#0f172a', // Slate 950
-              'brand-primary': '#1e293b', // A bit lighter than bg, for primary elements
-              'dark-primary': '#1e293b', // Card backgrounds
-              'dark-secondary': '#334155', // Borders, secondary elements
-              'dark-tertiary': '#475569', // Hover states, tertiary elements
-              'brand-accent': '#f59e0b', // Amber 500
-              'brand-accent-hover': '#d97706', // Amber 600
-              'dark-text-primary': '#f8fafc', // Slate 50
-              'dark-text-secondary': '#94a3b8', // Slate 400
+              // Palette
+              'rose-gold-base': '#B76E79',
+              'light-rose-gold': '#F6D1C1',
+              'metallic-rose': '#D4A5A5',
+              'warm-beige': '#FAF3F0',
+              'deep-rose': '#8B5E5A',
+              'soft-blush': '#FFE9E3',
+
+              // Theme mapping
+              'brand-bg': '#FAF3F0', // Warm Beige
+              'brand-primary': '#FFE9E3', // Soft Blush (cards, modals)
+              'brand-secondary': '#F6D1C1', // Light Rose Gold (hovers, inputs)
+              'brand-tertiary': '#D4A5A5', // Metallic Rose (borders)
+              
+              'brand-accent': '#B76E79', // Rose Gold Base
+              'brand-accent-hover': '#8B5E5A', // Deep Rose
+              
+              'brand-text-primary': '#8B5E5A', // Deep Rose
+              'brand-text-secondary': '#B76E79', // Rose Gold Base
+              'brand-text-on-accent': '#FAF3F0', // Warm Beige
             },
             backgroundImage: {
-              'gradient-card': 'linear-gradient(145deg, #334155, #1e293b)',
+              'gradient-card': 'linear-gradient(145deg, #FFE9E3, #F6D1C1)',
             }
           },
         },
@@ -79,13 +97,16 @@
     "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
     "react": "https://esm.sh/react@^19.1.1",
     "react/": "https://esm.sh/react@^19.1.1/",
-    "recharts": "https://esm.sh/recharts@^3.1.2"
+    "recharts": "https://esm.sh/recharts@^3.1.2",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
+    "framer-motion": "https://esm.sh/framer-motion@^11.3.11"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-brand-bg font-sans text-dark-text-primary">
+  <body class="bg-brand-bg font-sans text-brand-text-primary">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

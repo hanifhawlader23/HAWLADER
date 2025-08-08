@@ -81,6 +81,22 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ isOpen, onClose,
     });
   }, []);
 
+  const handleDateChange = useCallback((field: 'startDate' | 'endDate', value: string) => {
+    setEditableDocument(prev => {
+        if (!prev) return null;
+        // If a date is cleared, set it to undefined instead of an empty string
+        const dateValue = value ? value : undefined;
+        const newDoc = { ...prev, [field]: dateValue };
+        // Ensure that if one date is cleared, the other might need to be too if a range is required
+        if (!newDoc.startDate || !newDoc.endDate) {
+           // You could enforce that both are cleared if one is, or allow single dates.
+           // For now, we allow one or both to be set.
+        }
+        return newDoc;
+    });
+  }, []);
+
+
   const handleSave = () => {
     if (editableDocument) {
       saveDocument(editableDocument);
@@ -103,9 +119,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ isOpen, onClose,
             onItemChange={handleItemChange}
             onTaxRateChange={handleTaxRateChange}
             onDocumentNumberChange={handleDocumentNumberChange}
+            onDateChange={handleDateChange}
           />
-          <div className="p-4 bg-dark-primary border-t border-dark-secondary mt-4 rounded-b-lg flex justify-between items-center">
-            <p className="text-sm text-dark-text-secondary">You are in editing mode. Changes are updated live.</p>
+          <div className="p-4 bg-brand-primary border-t border-brand-tertiary mt-4 rounded-b-lg flex justify-between items-center">
+            <p className="text-sm text-brand-text-secondary">You are in editing mode. Changes are updated live.</p>
             <div>
               <Button onClick={onClose} variant="secondary" className="mr-2">Cancel</Button>
               <Button onClick={handleSave}>Confirm & Save Document</Button>

@@ -2,18 +2,19 @@ import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LabelList, AreaChart, Area } from 'recharts';
 import { useData } from '../context/DataContext';
 import { Card, Select, Modal, Input, Badge } from './ui';
-import { CHART_COLORS, CLIENT_COLORS, STATUS_COLORS } from '../constants';
+import { CHART_COLORS, getClientColorClass, STATUS_COLORS } from '../constants';
 import { Entry, FaltaEntry, FilterState } from '../types';
 import { EntryDetailView } from './EntryDetailView';
 import { FilterBar, filterDocumentsByDate, filterEntriesByDate } from './FilterBar';
 import { EventCalendar } from './EventCalendar';
+import { motion } from 'framer-motion';
 
 const CustomTooltip = ({ active, payload, label, formatter }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 p-2 border border-slate-700 rounded shadow-lg">
-        <p className="label font-semibold text-slate-100">{label}</p>
-        <p className="intro text-amber-400">{`${payload[0].name}: ${formatter ? formatter(payload[0].value) : payload[0].value}`}</p>
+      <div className="bg-brand-primary p-2 border border-brand-tertiary rounded shadow-lg">
+        <p className="label font-semibold text-brand-text-primary">{label}</p>
+        <p className="intro text-brand-accent">{`${payload[0].name}: ${formatter ? formatter(payload[0].value) : payload[0].value}`}</p>
       </div>
     );
   }
@@ -27,7 +28,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="font-bold text-sm">
+    <text x={x} y={y} fill="#8B5E5A" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="font-bold text-sm">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -180,50 +181,87 @@ export const Dashboard = () => {
         setViewingEntry(entryDetails);
     }
   }
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+      },
+    },
+  };
 
 
   return (
     <div className="p-0">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-dark-text-primary">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-brand-text-primary">Dashboard</h1>
       </div>
       
       <FilterBar clients={clients} onFilterChange={setFilters} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 my-6">
-        <button className="text-left w-full h-full" onClick={() => handleCardClick('total')}>
-            <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Total Entries</h3><p className="text-4xl font-bold text-amber-400">{dashboardStats.totalEntries}</p></Card>
-        </button>
-        <button className="text-left w-full h-full" onClick={() => handleCardClick('received')}>
-            <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Units Received</h3><p className="text-4xl font-bold text-blue-400">{dashboardStats.totalReceived}</p></Card>
-        </button>
-        <button className="text-left w-full h-full" onClick={() => handleCardClick('delivered')}>
-            <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Units Delivered</h3><p className="text-4xl font-bold text-green-400">{dashboardStats.totalDelivered}</p></Card>
-        </button>
-        <button className="text-left w-full h-full" onClick={() => handleCardClick('pending')}>
-            <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Pending Units</h3><p className="text-4xl font-bold text-red-400">{dashboardStats.pendingUnits}</p></Card>
-        </button>
-        {isAdmin && (
-            <button className="text-left w-full h-full" onClick={() => handleCardClick('revenue')}>
-                <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Total Revenue</h3><p className="text-4xl font-bold text-green-400">€{dashboardStats.totalRevenue.toFixed(0)}</p></Card>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-6"
+      >
+        <motion.div variants={itemVariants} className="text-left w-full h-full">
+            <button className="w-full h-full" onClick={() => handleCardClick('total')}>
+                <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-brand-text-secondary">Total Entries</h3><p className="text-3xl lg:text-4xl font-bold text-brand-accent">{dashboardStats.totalEntries}</p></Card>
             </button>
+        </motion.div>
+        <motion.div variants={itemVariants} className="text-left w-full h-full">
+            <button className="w-full h-full" onClick={() => handleCardClick('received')}>
+                <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-brand-text-secondary">Units Received</h3><p className="text-3xl lg:text-4xl font-bold text-brand-accent-hover">{dashboardStats.totalReceived}</p></Card>
+            </button>
+        </motion.div>
+        <motion.div variants={itemVariants} className="text-left w-full h-full">
+            <button className="w-full h-full" onClick={() => handleCardClick('delivered')}>
+                <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-brand-text-secondary">Units Delivered</h3><p className="text-3xl lg:text-4xl font-bold text-green-600">{dashboardStats.totalDelivered}</p></Card>
+            </button>
+        </motion.div>
+        <motion.div variants={itemVariants} className="text-left w-full h-full">
+            <button className="w-full h-full" onClick={() => handleCardClick('pending')}>
+                <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-brand-text-secondary">Pending Units</h3><p className="text-3xl lg:text-4xl font-bold text-red-600">{dashboardStats.pendingUnits}</p></Card>
+            </button>
+        </motion.div>
+        {isAdmin && (
+            <motion.div variants={itemVariants} className="text-left w-full h-full col-span-2 md:col-span-1">
+                <button className="w-full h-full" onClick={() => handleCardClick('revenue')}>
+                    <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-brand-text-secondary">Total Revenue</h3><p className="text-3xl lg:text-4xl font-bold text-green-600">€{dashboardStats.totalRevenue.toFixed(0)}</p></Card>
+                </button>
+            </motion.div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <Card>
-            <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Event Calendar</h3>
+            <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Event Calendar</h3>
             <EventCalendar entries={finalFilteredEntries} deliveries={filteredDeliveries} />
         </Card>
         <Card>
-            <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Delivered Units by Client</h3>
+            <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Delivered Units by Client</h3>
              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={clientChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
-                    <XAxis dataKey="name" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8"/>
-                    <Tooltip content={<CustomTooltip />} />
+                    <XAxis dataKey="name" stroke="#B76E79" />
+                    <YAxis stroke="#B76E79"/>
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(183, 110, 121, 0.1)' }}/>
                     <Bar dataKey="delivered" name="Delivered">
-                        <LabelList dataKey="delivered" position="top" fill="#f8fafc" />
+                        <LabelList dataKey="delivered" position="top" fill="#8B5E5A" />
                         {clientChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                         ))}
@@ -233,12 +271,12 @@ export const Dashboard = () => {
         </Card>
         {isAdmin && revenueByClientData.length > 0 && (
           <Card>
-              <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Revenue by Client</h3>
+              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Revenue by Client</h3>
               <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={revenueByClientData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <XAxis dataKey="name" stroke="#94a3b8" />
-                      <YAxis stroke="#94a3b8" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
-                      <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} />
+                      <XAxis dataKey="name" stroke="#B76E79" />
+                      <YAxis stroke="#B76E79" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
+                      <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} cursor={{ fill: 'rgba(183, 110, 121, 0.1)' }}/>
                       <Bar dataKey="revenue" name="Revenue">
                           {revenueByClientData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -250,12 +288,12 @@ export const Dashboard = () => {
         )}
          {isAdmin && revenueByCategoryData.length > 0 && (
           <Card>
-              <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Revenue by Product Category</h3>
+              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Revenue by Product Category</h3>
               <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={revenueByCategoryData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <XAxis dataKey="name" stroke="#94a3b8" />
-                      <YAxis stroke="#94a3b8" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
-                      <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} />
+                      <XAxis dataKey="name" stroke="#B76E79" />
+                      <YAxis stroke="#B76E79" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
+                      <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} cursor={{ fill: 'rgba(183, 110, 121, 0.1)' }}/>
                       <Bar dataKey="revenue" name="Revenue">
                           {revenueByCategoryData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={CHART_COLORS[CHART_COLORS.length - 1 - (index % CHART_COLORS.length)]} />
@@ -267,33 +305,33 @@ export const Dashboard = () => {
         )}
         {isAdmin && monthlyRevenueData.length > 0 && (
           <Card>
-              <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Monthly Revenue Trend</h3>
+              <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Monthly Revenue Trend</h3>
               <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#B76E79" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#B76E79" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="name" stroke="#94a3b8" />
-                      <YAxis stroke="#94a3b8" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
+                      <XAxis dataKey="name" stroke="#B76E79" />
+                      <YAxis stroke="#B76E79" tickFormatter={(value) => `€${(value as number / 1000).toFixed(0)}k`}/>
                       <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} />
-                      <Area type="monotone" dataKey="revenue" stroke="#f59e0b" fillOpacity={1} fill="url(#colorRevenue)" />
+                      <Area type="monotone" dataKey="revenue" stroke="#B76E79" fillOpacity={1} fill="url(#colorRevenue)" />
                   </AreaChart>
               </ResponsiveContainer>
           </Card>
         )}
         {isAdmin && revenueDistributionData.length > 0 && (
             <Card>
-                <h3 className="text-xl font-semibold text-dark-text-primary mb-4">Revenue Distribution by Client</h3>
+                <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Revenue Distribution by Client</h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                         <Pie data={revenueDistributionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={renderCustomizedLabel}>
                             {revenueDistributionData.map((entry, index) => <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
                         </Pie>
                         <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toFixed(2)}`} />} />
-                        <Legend wrapperStyle={{color: "#f8fafc"}}/>
+                        <Legend wrapperStyle={{color: "#8B5E5A"}}/>
                     </PieChart>
                 </ResponsiveContainer>
             </Card>
@@ -302,8 +340,8 @@ export const Dashboard = () => {
 
        <Modal isOpen={!!modalData} onClose={() => setModalData(null)} title={modalData?.title || ''} size="5xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-dark-text-secondary responsive-table">
-              <thead className="text-xs text-slate-400 uppercase bg-dark-tertiary">
+            <table className="w-full text-sm text-left text-brand-text-secondary responsive-table">
+              <thead className="text-xs text-brand-text-secondary uppercase bg-brand-secondary">
                 <tr>
                   <th scope="col" className="px-6 py-3">Code</th>
                   <th scope="col" className="px-6 py-3">Client</th>
@@ -313,9 +351,9 @@ export const Dashboard = () => {
               </thead>
               <tbody>
                 {modalData?.entries.map((entry: Entry) => (
-                  <tr key={entry.code} className="border-b border-dark-secondary hover:bg-dark-tertiary/80 cursor-pointer" onClick={() => handleEntryRowClick(entry.code)}>
-                    <td data-label="Code" className="px-6 py-4 font-medium text-dark-text-primary">{entry.code}</td>
-                    <td data-label="Client" className="px-6 py-4"><Badge className={CLIENT_COLORS[entry.client]}>{entry.client}</Badge></td>
+                  <tr key={entry.code} className="border-b border-brand-tertiary hover:bg-brand-secondary/80 cursor-pointer" onClick={() => handleEntryRowClick(entry.code)}>
+                    <td data-label="Code" className="px-6 py-4 font-medium text-brand-text-primary">{entry.code}</td>
+                    <td data-label="Client" className="px-6 py-4"><Badge className={getClientColorClass(entry.client, clients)}>{entry.client}</Badge></td>
                     <td data-label="Description" className="px-6 py-4">{entry.items.map(i => i.description).join(', ')}</td>
                     <td data-label="Status" className="px-6 py-4"><Badge className={STATUS_COLORS[entry.status]}>{entry.status}</Badge></td>
                   </tr>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Entry, Delivery } from '../types';
 
@@ -58,13 +59,13 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({ entries, deliverie
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="text-dark-text-primary text-sm">
+    <div className="text-brand-text-primary text-sm">
       <div className="flex justify-between items-center mb-2">
-        <button onClick={prevMonth} className="px-2 py-1 rounded-md hover:bg-dark-tertiary">&lt;</button>
+        <button onClick={prevMonth} className="px-2 py-1 rounded-md hover:bg-brand-secondary">&lt;</button>
         <h2 className="font-semibold text-base">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
-        <button onClick={nextMonth} className="px-2 py-1 rounded-md hover:bg-dark-tertiary">&gt;</button>
+        <button onClick={nextMonth} className="px-2 py-1 rounded-md hover:bg-brand-secondary">&gt;</button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-dark-text-secondary">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs text-brand-text-secondary">
         {daysOfWeek.map(day => <div key={day}>{day}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-1 mt-1">
@@ -77,13 +78,13 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({ entries, deliverie
             <div
               key={index}
               className={`relative flex flex-col items-center justify-center h-9 rounded-md ${
-                isCurrentMonth ? '' : 'text-dark-text-secondary/30'
-              } ${isToday ? 'bg-amber-500/30 font-bold' : ''}`}
+                isCurrentMonth ? '' : 'text-brand-text-secondary/30'
+              } ${isToday ? 'bg-brand-accent/30 font-bold' : ''}`}
             >
               <span>{day.getDate()}</span>
               {events && (
                 <div className="absolute bottom-1 flex gap-0.5">
-                  {events.received && <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>}
+                  {events.received && <div className="w-1.5 h-1.5 bg-brand-accent rounded-full"></div>}
                   {events.delivered && <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>}
                 </div>
               )}

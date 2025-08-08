@@ -122,6 +122,8 @@ export interface Document {
     taxRate: number;
     taxAmount: number;
     total: number;
+    startDate?: string;
+    endDate?: string;
 }
 
 export type DateRangePreset = 'all' | 'today' | 'yesterday' | 'last7' | 'last15' | 'last30';
@@ -165,6 +167,7 @@ export interface DataContextType {
   getEntryByCode: (code: number) => Entry | undefined;
   getFaltaEntries: () => FaltaEntry[];
   isAdmin: boolean;
+  isManager: boolean;
   getCalculatedQuantities: (entry: Entry) => { recibidaQuantity: number, deliveredQuantity: number, remainingQuantity: number };
   getCalculatedQuantitiesForItem: (entryItem: EntryItem, entryCode: number) => { recibidaQuantity: number, deliveredQuantity: number, faltaQuantity: number };
   getDeliveryBreakdownForItem: (entryItem: EntryItem, entryCode: number) => { date: string; qty: number }[];

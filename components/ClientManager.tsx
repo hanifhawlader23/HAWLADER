@@ -1,9 +1,12 @@
 
+
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Button, Modal, Input, Textarea, useToast, ConfirmationModal } from './ui';
 import { Client, Column } from '../types';
 import { SelectableTable } from './SelectableTable';
+import { ExportControls } from './ExportControls';
 
 const ClientForm: React.FC<{
     onClose: () => void;
@@ -54,7 +57,7 @@ const ClientForm: React.FC<{
             </div>
              <Textarea label="Address" name="address" value={formData.address} onChange={handleChange} required />
             <Input label="Logo" type="file" name="logo" onChange={handleLogoChange} accept="image/*" />
-            {formData.logo && <img src={formData.logo} alt="logo preview" className="h-16 w-auto object-contain bg-dark-tertiary p-1 rounded-md" />}
+            {formData.logo && <img src={formData.logo} alt="logo preview" className="h-16 w-auto object-contain bg-brand-secondary p-1 rounded-md" />}
 
             <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
@@ -105,7 +108,7 @@ export const ClientManager: React.FC = () => {
         { 
             header: 'Name', 
             accessor: (item) => (
-                <div className="flex items-center gap-3 font-medium text-dark-text-primary">
+                <div className="flex items-center gap-3 font-medium text-brand-text-primary">
                     {item.logo && <img src={item.logo} alt={`${item.name} logo`} className="h-8 w-8 rounded-full object-cover" />}
                     {item.name}
                 </div>
@@ -117,8 +120,8 @@ export const ClientManager: React.FC = () => {
             header: 'Contact', 
             accessor: (item) => (
                 <div>
-                    <div className="text-dark-text-primary">{item.email}</div>
-                    <div className="text-xs text-dark-text-secondary">{item.phone}</div>
+                    <div className="text-brand-text-primary">{item.email}</div>
+                    <div className="text-xs text-brand-text-secondary">{item.phone}</div>
                 </div>
             ),
             headerClassName: 'px-6 py-3',
@@ -141,11 +144,22 @@ export const ClientManager: React.FC = () => {
         });
     }
 
+    const exportColumns = [
+        { title: 'Name', dataKey: 'name' as const },
+        { title: 'Email', dataKey: 'email' as const },
+        { title: 'Phone', dataKey: 'phone' as const },
+        { title: 'VAT Number', dataKey: 'vatNumber' as const },
+        { title: 'Address', dataKey: 'address' as const },
+    ];
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-dark-text-primary">Client Management</h1>
-                {isAdmin && <Button onClick={handleAdd}>+ Add New Client</Button>}
+                <h1 className="text-3xl font-bold text-brand-text-primary">Client Management</h1>
+                <div className="flex items-center gap-2">
+                    <ExportControls data={clients} columns={exportColumns} fileName="clients" />
+                    {isAdmin && <Button onClick={handleAdd}>+ Add New Client</Button>}
+                </div>
             </div>
             <Card>
                  <SelectableTable 

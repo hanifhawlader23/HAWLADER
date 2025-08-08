@@ -142,12 +142,12 @@ export const LoginScreen: React.FC = () => {
   return (
     <>
     <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
-      <Card className="max-w-md w-full">
+      <Card className="max-w-md w-full !bg-brand-primary">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">
-            <span className="text-white">HAWLA</span><span className="text-brand-accent">DER</span>
+            <span className="text-brand-text-primary">HAWLA</span><span className="text-brand-accent">DER</span>
           </h1>
-          <p className="text-dark-text-secondary mt-2">Manufacturing Management</p>
+          <p className="text-brand-text-secondary mt-2">Manufacturing Management</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input 
@@ -194,7 +194,7 @@ export const LoginScreen: React.FC = () => {
           </div>
 
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-          {successMessage && <p className="text-sm text-green-400 text-center">{successMessage}</p>}
+          {successMessage && <p className="text-sm text-green-500 text-center">{successMessage}</p>}
 
 
           <div className="flex flex-col gap-2">
@@ -208,7 +208,7 @@ export const LoginScreen: React.FC = () => {
             )}
           </div>
           
-          <p className="text-center text-sm text-dark-text-secondary">
+          <p className="text-center text-sm text-brand-text-secondary">
             {isSignUp ? "Already have an account?" : "Don't have an account?"}
             <button 
               type="button" 
@@ -228,7 +228,7 @@ export const LoginScreen: React.FC = () => {
     <Modal isOpen={isForgotPasswordOpen} onClose={() => setForgotPasswordOpen(false)} title="Reset Password">
         {resetStep === 1 && (
             <form onSubmit={handleRequestResetCode} className="space-y-4">
-                <p className="text-dark-text-secondary">Enter your account's email address and we will send you a password reset code.</p>
+                <p className="text-brand-text-secondary">Enter your account's email address and we will send you a password reset code.</p>
                 <Input label="Email" type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required autoFocus />
                  {resetError && <p className="text-sm text-red-500">{resetError}</p>}
                 <div className="flex justify-end gap-2 pt-2">
@@ -239,7 +239,7 @@ export const LoginScreen: React.FC = () => {
         )}
         {resetStep === 2 && (
              <form onSubmit={handleResetPassword} className="space-y-4">
-                <p className="text-sm text-green-400 bg-green-900/50 p-3 rounded-md">
+                <p className="text-sm text-green-500 bg-green-900/20 p-3 rounded-md">
                     For demonstration purposes, your reset code is: <strong className="font-bold text-lg tracking-widest">{generatedCode}</strong>
                     <br/>In a real application, this would be sent to your email.
                 </p>
@@ -255,7 +255,7 @@ export const LoginScreen: React.FC = () => {
         )}
         {resetStep === 3 && (
             <div className="space-y-4">
-                <p className="text-green-400">{resetMessage}</p>
+                <p className="text-green-500">{resetMessage}</p>
                 <div className="flex justify-end">
                     <Button onClick={() => setForgotPasswordOpen(false)}>Back to Login</Button>
                 </div>

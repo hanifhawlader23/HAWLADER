@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Button, Input, Textarea } from './ui';
@@ -31,7 +32,7 @@ export const CompanyDetailsManager: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-dark-text-primary">Company Details</h1>
+            <h1 className="text-3xl font-bold text-brand-text-primary">Company Details</h1>
             <Card>
                 <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl mx-auto">
                     <Input label="Company Name" name="name" value={formData.name} onChange={handleChange} required />
@@ -42,7 +43,7 @@ export const CompanyDetailsManager: React.FC = () => {
                     </div>
                     <Textarea label="Address" name="address" value={formData.address} onChange={handleChange} required />
                     <Input label="Company Logo" type="file" name="logo" onChange={handleLogoChange} accept="image/*" />
-                    {formData.logo && <img src={formData.logo} alt="logo preview" className="h-20 w-auto object-contain bg-dark-tertiary p-2 rounded-md" />}
+                    {formData.logo && <img src={formData.logo} alt="logo preview" className="h-20 w-auto object-contain bg-brand-secondary p-2 rounded-md" />}
 
                     <div className="flex justify-end pt-4">
                         <Button type="submit">Save Changes</Button>

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Modal, Button, Badge, useToast, ConfirmationModal } from './ui';
@@ -7,6 +9,7 @@ import { DocumentEditor } from './InvoiceEditor';
 import { Document, FilterState, Column } from '../types';
 import { FilterBar, filterDocumentsByDate } from './FilterBar';
 import { SelectableTable } from './SelectableTable';
+import { ExportControls } from './ExportControls';
 
 export const InvoiceHistory: React.FC = () => {
   const { documents, clients, deleteDocument, deleteMultipleDocuments, isAdmin } = useData();
@@ -54,11 +57,11 @@ export const InvoiceHistory: React.FC = () => {
   };
 
   const columns: Column<Document>[] = [
-      { header: 'Number', accessor: 'documentNumber', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-dark-text-primary' },
-      { header: 'Type', accessor: (item) => <Badge className={item.documentType === 'Factura' ? 'bg-teal-900 text-teal-300' : 'bg-orange-900 text-orange-300'}>{item.documentType}</Badge>, headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
+      { header: 'Number', accessor: 'documentNumber', headerClassName: 'px-6 py-3', className: 'px-6 py-4 font-medium text-brand-text-primary' },
+      { header: 'Type', accessor: (item) => <Badge className={item.documentType === 'Factura' ? 'bg-green-200 text-green-800' : 'bg-orange-200 text-orange-800'}>{item.documentType}</Badge>, headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
       { header: 'Date', accessor: (item) => new Date(item.date).toLocaleDateString(), headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
       { header: 'Client', accessor: (item) => getClientName(item.clientId), headerClassName: 'px-6 py-3', className: 'px-6 py-4' },
-      { header: 'Amount', accessor: (item) => `€${item.total.toFixed(2)}`, headerClassName: 'px-6 py-3 text-right', className: 'px-6 py-4 text-right font-semibold text-dark-text-primary' },
+      { header: 'Amount', accessor: (item) => `€${item.total.toFixed(2)}`, headerClassName: 'px-6 py-3 text-right', className: 'px-6 py-4 text-right font-semibold text-brand-text-primary' },
       { 
           header: 'Actions', 
           accessor: (item) => (
@@ -72,12 +75,25 @@ export const InvoiceHistory: React.FC = () => {
           className: 'px-6 py-4'
       },
   ];
+  
+  const exportColumns = [
+      { title: 'Number', dataKey: 'documentNumber' as const },
+      { title: 'Type', dataKey: 'documentType' as const },
+      { title: 'Date', dataKey: (item: Document) => new Date(item.date).toLocaleDateString() },
+      { title: 'Client', dataKey: (item: Document) => getClientName(item.clientId) },
+      { title: 'Subtotal (€)', dataKey: (item: Document) => item.subtotal.toFixed(2) },
+      { title: 'Surcharge (€)', dataKey: (item: Document) => item.surcharge.toFixed(2) },
+      { title: 'Tax Rate (%)', dataKey: (item: Document) => item.taxRate.toFixed(2) },
+      { title: 'Tax Amount (€)', dataKey: (item: Document) => item.taxAmount.toFixed(2) },
+      { title: 'Total (€)', dataKey: (item: Document) => item.total.toFixed(2) },
+  ];
 
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-dark-text-primary">Invoice History</h1>
+          <h1 className="text-3xl font-bold text-brand-text-primary">Invoice History</h1>
+          <ExportControls data={filteredDocuments} columns={exportColumns} fileName="invoice_history" />
       </div>
       
       <FilterBar clients={clients} onFilterChange={setFilters} />

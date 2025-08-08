@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Modal, Button } from './ui';
 
@@ -68,7 +69,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ isOpen, 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Take Photo" size="lg">
       <div className="flex flex-col items-center">
-        <video ref={videoRef} autoPlay playsInline className="w-full rounded-md bg-slate-900"></video>
+        <video ref={videoRef} autoPlay playsInline className="w-full rounded-md bg-deep-rose/20"></video>
         <canvas ref={canvasRef} className="hidden"></canvas>
         <div className="mt-4">
             <Button onClick={handleCapture}>Capture Photo</Button>

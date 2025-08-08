@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Entry, Status, SizeQuantities, Delivery, EntryItem, Product, DeliveryItem } from '../types';
-import { SIZES, STATUS_COLORS, CLIENT_COLORS, USER_COLORS } from '../constants';
+import { SIZES, STATUS_COLORS, USER_COLORS } from '../constants';
 import { Button, Input, Select, Modal, TrashIcon, Badge } from './ui';
 import { CameraCaptureModal } from './CameraCapture';
 
@@ -144,46 +145,45 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onClose, entryToEdit }) =>
   
   const statusColor = STATUS_COLORS[formData.status];
   const userColor = USER_COLORS[formData.whoInput];
-  const clientColor = CLIENT_COLORS[formData.client];
 
   return (
     <>
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input label="Date" type="date" name="date" value={formData.date} onChange={handleChange} required />
-        <Input label="Code" type="text" value={isEditMode ? entryToEdit.code : getNewEntryCode()} disabled className="bg-dark-tertiary" />
+        <Input label="Code" type="text" value={isEditMode ? entryToEdit.code : getNewEntryCode()} disabled className="bg-brand-secondary" />
         
         <Select label="Who Input" name="whoInput" value={formData.whoInput} onChange={handleChange} valueColor={userColor}>
-          {users.map(u => <option key={u.id} value={u.email} className="bg-dark-tertiary text-dark-text-primary">{u.fullName} ({u.email})</option>)}
+          {users.map(u => <option key={u.id} value={u.email} className="bg-brand-primary text-brand-text-primary">{u.fullName} ({u.email})</option>)}
         </Select>
         
-        <Select label="Client" name="client" value={formData.client} onChange={handleChange} valueColor={clientColor}>
-          {clients.map(c => <option key={c.id} value={c.name} className="bg-dark-tertiary text-dark-text-primary">{c.name}</option>)}
+        <Select label="Client" name="client" value={formData.client} onChange={handleChange}>
+          {clients.map(c => <option key={c.id} value={c.name} className="bg-brand-primary text-brand-text-primary">{c.name}</option>)}
         </Select>
          
         <div>
-            <label className="block text-sm font-medium text-dark-text-secondary mb-1">Status</label>
+            <label className="block text-sm font-medium text-brand-text-secondary mb-1">Status</label>
             <div className="mt-1 flex items-center h-10">
                 <Badge className={statusColor}>{formData.status}</Badge>
             </div>
         </div>
 
         <div className="space-y-1">
-            <label className="block text-sm font-medium text-dark-text-secondary mb-1">Photo</label>
+            <label className="block text-sm font-medium text-brand-text-secondary mb-1">Photo</label>
             <div className="flex items-center gap-2">
                 <Input label="" type="file" name="photo" onChange={handlePhotoChange} accept="image/*" className="w-full" />
                 <Button type="button" variant="secondary" onClick={() => setCameraOpen(true)}>Take Photo</Button>
             </div>
-            {formData.photo && <img src={formData.photo} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded-md bg-dark-tertiary" />}
+            {formData.photo && <img src={formData.photo} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded-md bg-brand-secondary" />}
         </div>
       </div>
       
-      <div className="space-y-4 pt-4 border-t border-dark-tertiary">
-        <h3 className="text-lg font-medium text-dark-text-primary">Products in this Entry</h3>
+      <div className="space-y-4 pt-4 border-t border-brand-tertiary">
+        <h3 className="text-lg font-medium text-brand-text-primary">Products in this Entry</h3>
         {items.map((item, index) => (
-            <div key={item?.id || index} className="p-4 rounded-lg bg-dark-tertiary border border-slate-600 relative">
+            <div key={item?.id || index} className="p-4 rounded-lg bg-brand-secondary/50 border border-brand-tertiary relative">
                  {items.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveItem(index)} className="absolute top-2 right-2 text-red-400 hover:text-red-300">
+                    <button type="button" onClick={() => handleRemoveItem(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-400">
                         <TrashIcon />
                     </button>
                 )}
@@ -206,8 +206,8 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onClose, entryToEdit }) =>
                 </div>
 
                 <div>
-                    <h4 className="text-md font-medium text-dark-text-secondary mb-2">Size-wise Quantities</h4>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    <h4 className="text-md font-medium text-brand-text-secondary mb-2">Size-wise Quantities</h4>
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-2">
                         {SIZES.map(size => (
                             <Input key={size} label={size} type="number" min="0" value={item.sizeQuantities?.[size] || ''} onChange={e => handleSizeChange(index, size, e.target.value)} />
                         ))}
@@ -218,7 +218,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onClose, entryToEdit }) =>
         {!isEditMode && <Button type="button" variant="secondary" onClick={handleAddItem}>+ Add Another Product</Button>}
       </div>
       
-      <div className="flex justify-end gap-2 pt-4 border-t border-dark-tertiary mt-4">
+      <div className="flex justify-end gap-2 pt-4 border-t border-brand-tertiary mt-4">
         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
         <Button type="submit">{isEditMode ? 'Save Changes' : 'Add Entry'}</Button>
       </div>
@@ -316,39 +316,39 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({ onClose, entryCode }
     };
 
     if (!entry) {
-        return <p className="text-dark-text-secondary">Loading entry details...</p>;
+        return <p className="text-brand-text-secondary">Loading entry details...</p>;
     }
     
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-dark-tertiary rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-brand-secondary/50 rounded-lg">
                 <Input label="Delivery Date" type="date" name="deliveryDate" value={formData.deliveryDate} onChange={handleChange} required />
                 <Select label="Who Delivered" name="whoDelivered" value={formData.whoDelivered} onChange={handleChange}>
-                    {users.map(u => <option key={u.id} value={u.email} className="bg-dark-tertiary text-dark-text-primary">{u.fullName}</option>)}
+                    {users.map(u => <option key={u.id} value={u.email} className="bg-brand-primary text-brand-text-primary">{u.fullName}</option>)}
                 </Select>
                 <div>
-                    <p className="text-sm font-medium text-dark-text-secondary">Entry Code</p>
-                    <p className="text-lg font-bold text-dark-text-primary mt-1">{entry.code}</p>
+                    <p className="text-sm font-medium text-brand-text-secondary">Entry Code</p>
+                    <p className="text-lg font-bold text-brand-text-primary mt-1">{entry.code}</p>
                 </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-dark-tertiary">
-                <h3 className="text-lg font-medium text-dark-text-primary">Delivery Quantities</h3>
+            <div className="space-y-4 pt-4 border-t border-brand-tertiary">
+                <h3 className="text-lg font-medium text-brand-text-primary">Delivery Quantities</h3>
                 {entry.items.map((item, index) => {
                     const remaining = getRemainingQuantitiesForItem(entry, item.id);
                     const totalRemaining = Object.values(remaining).reduce((sum, q) => sum + (q || 0), 0);
                     if (totalRemaining === 0) return null; // Don't show fully delivered items
 
                     return (
-                        <div key={item.id} className="p-4 rounded-lg bg-dark-tertiary border border-slate-600">
-                            <p className="font-semibold text-amber-400">{item.description}</p>
-                            <p className="text-xs text-dark-text-secondary mb-2">
+                        <div key={item.id} className="p-4 rounded-lg bg-brand-secondary/50 border border-brand-tertiary">
+                            <p className="font-semibold text-brand-accent-hover">{item.description}</p>
+                            <p className="text-xs text-brand-text-secondary mb-2">
                                 Ref: {item.reference1} {item.reference2 && `/ ${item.reference2}`}
                             </p>
                             
                             <div>
-                                <h4 className="text-md font-medium text-dark-text-secondary mb-2">Enter quantities to deliver:</h4>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                                <h4 className="text-md font-medium text-brand-text-secondary mb-2">Enter quantities to deliver:</h4>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-3">
                                     {SIZES.map(size => {
                                         const remainingForSize = remaining[size] || 0;
                                         if (remainingForSize > 0) {
@@ -374,7 +374,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({ onClose, entryCode }
                 })}
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-dark-tertiary mt-4">
+            <div className="flex justify-end gap-2 pt-4 border-t border-brand-tertiary mt-4">
                 <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                 <Button type="submit">Add Delivery</Button>
             </div>
