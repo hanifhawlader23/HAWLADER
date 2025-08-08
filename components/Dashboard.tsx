@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LabelList, AreaChart, Area } from 'recharts';
 import { useData } from '../context/DataContext';
@@ -191,7 +190,7 @@ export const Dashboard = () => {
       
       <FilterBar clients={clients} onFilterChange={setFilters} />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 my-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 my-6">
         <button className="text-left w-full h-full" onClick={() => handleCardClick('total')}>
             <Card gradient className="text-center h-full transition-all transform hover:scale-105 hover:shadow-2xl"><h3 className="text-lg font-medium text-dark-text-secondary">Total Entries</h3><p className="text-4xl font-bold text-amber-400">{dashboardStats.totalEntries}</p></Card>
         </button>
@@ -303,7 +302,7 @@ export const Dashboard = () => {
 
        <Modal isOpen={!!modalData} onClose={() => setModalData(null)} title={modalData?.title || ''} size="5xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-dark-text-secondary">
+            <table className="w-full text-sm text-left text-dark-text-secondary responsive-table">
               <thead className="text-xs text-slate-400 uppercase bg-dark-tertiary">
                 <tr>
                   <th scope="col" className="px-6 py-3">Code</th>
@@ -315,10 +314,10 @@ export const Dashboard = () => {
               <tbody>
                 {modalData?.entries.map((entry: Entry) => (
                   <tr key={entry.code} className="border-b border-dark-secondary hover:bg-dark-tertiary/80 cursor-pointer" onClick={() => handleEntryRowClick(entry.code)}>
-                    <td className="px-6 py-4 font-medium text-dark-text-primary">{entry.code}</td>
-                    <td className="px-6 py-4"><Badge className={CLIENT_COLORS[entry.client]}>{entry.client}</Badge></td>
-                    <td className="px-6 py-4">{entry.items.map(i => i.description).join(', ')}</td>
-                    <td className="px-6 py-4"><Badge className={STATUS_COLORS[entry.status]}>{entry.status}</Badge></td>
+                    <td data-label="Code" className="px-6 py-4 font-medium text-dark-text-primary">{entry.code}</td>
+                    <td data-label="Client" className="px-6 py-4"><Badge className={CLIENT_COLORS[entry.client]}>{entry.client}</Badge></td>
+                    <td data-label="Description" className="px-6 py-4">{entry.items.map(i => i.description).join(', ')}</td>
+                    <td data-label="Status" className="px-6 py-4"><Badge className={STATUS_COLORS[entry.status]}>{entry.status}</Badge></td>
                   </tr>
                 ))}
               </tbody>

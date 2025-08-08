@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { SelectableTableProps, Column } from '../types';
 import { Button, ConfirmationModal, useToast } from './ui';
@@ -69,7 +68,7 @@ export const SelectableTable = <T extends { [key: string]: any }>({
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-dark-text-secondary">
+        <table className="w-full text-sm text-left text-dark-text-secondary responsive-table">
           <thead className="text-xs text-slate-400 uppercase bg-dark-tertiary">
             <tr>
               {canSelect && (
@@ -97,7 +96,7 @@ export const SelectableTable = <T extends { [key: string]: any }>({
                 onClick={() => onRowClick?.(item)}
               >
                 {canSelect && (
-                  <td className="p-4">
+                  <td data-label="Select" className="p-4">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-slate-500 bg-dark-secondary text-brand-accent focus:ring-brand-accent"
@@ -108,7 +107,7 @@ export const SelectableTable = <T extends { [key: string]: any }>({
                   </td>
                 )}
                 {columns.map((col, index) => (
-                  <td key={index} className={col.className || 'px-6 py-4'}>
+                  <td key={index} data-label={col.header} className={col.className || 'px-6 py-4'}>
                     {typeof col.accessor === 'function' ? col.accessor(item) : item[col.accessor]}
                   </td>
                 ))}

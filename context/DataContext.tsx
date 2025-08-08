@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { Entry, Delivery, Status, FaltaEntry, Product, SizeQuantities, Client, CompanyDetails, Document, DocumentItem, DocumentType, EntryItem, DeliveryItem, User, DataContextType, Role } from '../types';
 import { INITIAL_ENTRIES, INITIAL_DELIVERIES, INITIAL_PRODUCTS, INITIAL_CLIENTS, INITIAL_COMPANY_DETAILS, SIZES, INITIAL_USERS } from '../constants';
@@ -90,16 +89,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const effectiveRole = currentUser?.role === 'admin' && simulatedRole ? simulatedRole : currentUser?.role;
   const isAdmin = effectiveRole === 'admin';
 
-  const login = useCallback(async (username: string, password?: string): Promise<boolean> => {
+  const login = useCallback(async (username: string, password?: string): Promise<{ success: boolean; message: string; }> => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      return true;
+    if (!user) {
+        return { success: false, message: 'Invalid username or password.' };
     }
-    return false;
+    if (!user.isApproved) {
+        return { success: false, message: 'Your account is awaiting admin approval.' };
+    }
+    setCurrentUser(user);
+    return { success: true, message: 'Login successful!' };
   }, [users]);
   
-  const signUp = useCallback(async (userData: Omit<User, 'id' | 'role' | 'webAuthnCredentialId'>): Promise<{ success: boolean; message: string }> => {
+  const signUp = useCallback(async (userData: Omit<User, 'id' | 'role' | 'webAuthnCredentialId' | 'isApproved'>): Promise<{ success: boolean; message: string }> => {
     if (!userData.username || !userData.password || !userData.email || !userData.fullName) {
         return { success: false, message: 'All fields except phone are required.' };
     }
@@ -117,11 +119,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: newId,
       ...userData,
       role: 'user', // New users are always 'user'
+      isApproved: false, // New users need admin approval
     };
 
     setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser); // Auto-login after sign up
-    return { success: true, message: 'Sign up successful!' };
+    return { success: true, message: 'Sign up successful! An admin will review your request shortly.' };
   }, [users]);
 
   const requestPasswordReset = useCallback(async (email: string): Promise<{ success: boolean; message: string; code?: string }> => {
@@ -195,12 +197,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  const loginWithBiometrics = useCallback(async (): Promise<boolean> => {
+  const loginWithBiometrics = useCallback(async (): Promise<{ success: boolean; message: string; }> => {
     try {
         const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
         if (!available) {
-            alert("Biometric login not supported on this device.");
-            return false;
+            return { success: false, message: 'Biometric login not supported on this device.' };
         }
 
         const registeredUsers = users.filter(u => u.webAuthnCredentialId).map(u => ({
@@ -209,8 +210,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         if (registeredUsers.length === 0) {
-            alert("No biometric credentials registered. Please register first.");
-            return false;
+            return { success: false, message: 'No biometric credentials registered. Please register first.' };
         }
 
         const credential = await navigator.credentials.get({
@@ -227,16 +227,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const credentialId = bufferToBase64url(credential.rawId);
             const user = users.find(u => u.webAuthnCredentialId === credentialId);
             if (user) {
+                 if (!user.isApproved) {
+                    return { success: false, message: 'Your account is awaiting admin approval.' };
+                }
                 setCurrentUser(user);
-                return true;
+                return { success: true, message: 'Login successful!' };
             }
         }
-        alert("Biometric login failed. User not found.");
-        return false;
+        return { success: false, message: 'Biometric login failed. User not found.' };
     } catch (error) {
         console.error('Biometric login failed:', error);
-        alert(`Biometric login failed.`);
-        return false;
+        return { success: false, message: `Biometric login failed.` };
     }
   }, [users]);
 
@@ -248,6 +249,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserRole = useCallback((userId: number, role: 'admin' | 'user' | 'manager') => {
     setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, role } : u));
+  }, []);
+
+  const approveUser = useCallback((userId: number) => {
+    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, isApproved: true } : u));
   }, []);
   
     const getRemainingQuantitiesForItem = useCallback((entry: Entry, entryItemId: string): SizeQuantities => {
@@ -612,7 +617,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <DataContext.Provider value={{ 
-        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, login, logout, signUp, requestPasswordReset, resetPassword, updateUserRole, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
+        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, login, logout, signUp, requestPasswordReset, resetPassword, updateUserRole, approveUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
         isAdmin, simulatedRole, setSimulatedRole, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
         deleteDocument, deleteMultipleDocuments, getNewDocumentNumber, getEntryFinancials, getRevenueData, getLatestDeliveryDateForEntry, getRemainingQuantitiesForItem, registerBiometrics, loginWithBiometrics
     }}>

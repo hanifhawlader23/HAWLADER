@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DataProvider, useData } from './context/DataContext';
 import { Dashboard } from './components/Dashboard';
@@ -12,7 +11,7 @@ import { InvoiceHistory } from './components/InvoiceHistory';
 import { CompanyDetailsManager } from './components/CompanyDetails';
 import { LoginScreen } from './components/LoginScreen';
 import { UserManager } from './components/UserManager';
-import { Button } from './components/ui';
+import { Button, MenuIcon } from './components/ui';
 import { FaltaView } from './components/FaltaView';
 import { ToastProvider } from './components/ui';
 
@@ -35,6 +34,7 @@ type View = 'dashboard' | 'entries' | 'delivered' | 'prefacturado' | 'invoiceWor
 
 const AppContent = () => {
     const [view, setView] = useState<View>('dashboard');
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
     const { isAdmin, currentUser, logout, registerBiometrics, simulatedRole, setSimulatedRole } = useData();
 
     if (!currentUser) {
@@ -88,29 +88,48 @@ const AppContent = () => {
     const getVisibleNavItems = (items: typeof allNavItems) => {
       const effectiveRole = simulatedRole || currentUser.role;
       return items.filter(item => item.roles.includes(effectiveRole));
-    }
+    };
+
+    const handleNavClick = (selectedView: View) => {
+        setView(selectedView);
+        setSidebarOpen(false); // Close sidebar on mobile after navigation
+    };
 
     return (
         <div className="flex h-screen bg-brand-bg font-sans text-dark-text-primary">
-            <aside className="w-64 bg-brand-primary text-slate-300 flex flex-col shadow-2xl">
-                <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-dark-secondary">
+            {/* Mobile Header */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-brand-primary border-b border-dark-secondary flex items-center px-4 z-40">
+                <button onClick={() => setSidebarOpen(true)} className="text-white p-2">
+                    <MenuIcon />
+                </button>
+                 <div className="flex-1 text-center text-xl font-bold">
                     <span className="text-white">HAWLA</span><span className="text-brand-accent">DER</span>
                 </div>
-                <nav className="flex-1 px-4 py-6 space-y-2">
+            </div>
+
+            {/* Sidebar Overlay for Mobile */}
+            {isSidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/60 z-40" onClick={() => setSidebarOpen(false)}></div>}
+            
+            {/* Sidebar */}
+            <aside className={`fixed lg:static top-0 left-0 h-full w-64 bg-brand-primary text-slate-300 flex flex-col shadow-2xl z-50 transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+                <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-dark-secondary flex-shrink-0">
+                    <span className="text-white">HAWLA</span><span className="text-brand-accent">DER</span>
+                </div>
+                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                     {getVisibleNavItems(allNavItems).map(item => (
-                         <button key={item.id} onClick={() => setView(item.id as View)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-brand-accent text-white shadow-md' : 'hover:bg-dark-tertiary hover:text-white'}`}>
+                         <button key={item.id} onClick={() => handleNavClick(item.id as View)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-brand-accent text-white shadow-md' : 'hover:bg-dark-tertiary hover:text-white'}`}>
                             {item.icon}
                             <span className="font-semibold">{item.label}</span>
                         </button>
                     ))}
                 </nav>
-                <div className="p-4 border-t border-dark-secondary space-y-2">
+                <div className="p-4 border-t border-dark-secondary space-y-2 flex-shrink-0">
                     {currentUser.role === 'admin' && (
                          <Button variant="secondary" size="sm" className="w-full" onClick={handleViewAs}>
                             <EyeIcon /> <span className="ml-2">{getViewAsText()}</span>
                         </Button>
                     )}
-                    <div className="text-center text-sm text-dark-text-secondary">
+                    <div className="text-center text-xs text-dark-text-secondary">
                         Logged in as: <span className="font-bold text-dark-text-primary">{currentUser.fullName}</span> ({simulatedRole ? `simulating ${simulatedRole}` : currentUser.role})
                     </div>
                     {!currentUser.webAuthnCredentialId && (
@@ -125,7 +144,7 @@ const AppContent = () => {
                 </div>
             </aside>
             
-            <main className="flex-1 p-8 overflow-y-auto bg-brand-bg">
+            <main className="flex-1 p-4 sm:p-8 overflow-y-auto bg-brand-bg mt-16 lg:mt-0">
                 {renderView()}
             </main>
         </div>

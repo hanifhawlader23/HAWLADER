@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Input, Button, Modal } from './ui';
@@ -7,6 +6,7 @@ export const LoginScreen: React.FC = () => {
   const { login, signUp, loginWithBiometrics, requestPasswordReset, resetPassword } = useData();
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Common fields
   const [username, setUsername] = useState(''); // This is now email
@@ -49,6 +49,7 @@ export const LoginScreen: React.FC = () => {
     setPhone('');
     setActualUsername('');
     setError('');
+    setSuccessMessage('');
   };
 
   const resetForgotPasswordForm = () => {
@@ -70,6 +71,7 @@ export const LoginScreen: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     if (isSignUp) {
         if (password !== confirmPassword) {
@@ -83,22 +85,26 @@ export const LoginScreen: React.FC = () => {
             email: username, // 'username' state is used for email
             phone
         });
-        if (!result.success) {
+        if (result.success) {
+            setSuccessMessage(result.message);
+            setIsSignUp(false); // Switch to login view
+            resetMainForm();
+        } else {
             setError(result.message);
         }
     } else {
-        const success = await login(username, password);
-        if (!success) {
-            setError('Invalid email or password.');
+        const result = await login(username, password);
+        if (!result.success) {
+            setError(result.message);
         }
     }
   };
   
   const handleBiometricLogin = async () => {
       setError('');
-      const success = await loginWithBiometrics();
-      if (!success) {
-          setError('Biometric authentication failed.');
+      const result = await loginWithBiometrics();
+      if (!result.success) {
+          setError(result.message);
       }
   }
 
@@ -188,6 +194,8 @@ export const LoginScreen: React.FC = () => {
           </div>
 
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+          {successMessage && <p className="text-sm text-green-400 text-center">{successMessage}</p>}
+
 
           <div className="flex flex-col gap-2">
             <Button type="submit" className="w-full" size="lg">

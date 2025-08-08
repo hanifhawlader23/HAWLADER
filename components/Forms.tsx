@@ -207,7 +207,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onClose, entryToEdit }) =>
 
                 <div>
                     <h4 className="text-md font-medium text-dark-text-secondary mb-2">Size-wise Quantities</h4>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                         {SIZES.map(size => (
                             <Input key={size} label={size} type="number" min="0" value={item.sizeQuantities?.[size] || ''} onChange={e => handleSizeChange(index, size, e.target.value)} />
                         ))}
@@ -226,8 +226,8 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onClose, entryToEdit }) =>
     
     <CameraCaptureModal
         isOpen={isCameraOpen}
-        onClose={() => setCameraOpen(false)}
         onCapture={handlePhotoCapture}
+        onClose={() => setCameraOpen(false)}
     />
     </>
   );
@@ -348,7 +348,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({ onClose, entryCode }
                             
                             <div>
                                 <h4 className="text-md font-medium text-dark-text-secondary mb-2">Enter quantities to deliver:</h4>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                                     {SIZES.map(size => {
                                         const remainingForSize = remaining[size] || 0;
                                         if (remainingForSize > 0) {
