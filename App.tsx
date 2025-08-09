@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { DataProvider, useData } from './context/DataContext';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { useData } from './context/DataContext';
+import { useAuth } from './context/AuthContext';
 import { Dashboard } from './components/Dashboard';
 import { EntriesManager } from './components/Entries';
 import { InvoiceWorkbench } from './components/Invoicing';
@@ -12,8 +14,8 @@ import { CompanyDetailsManager } from './components/CompanyDetails';
 import { LoginScreen } from './components/LoginScreen';
 import { UserManager } from './components/UserManager';
 import { Button, MenuIcon } from './components/ui';
+import { useToast } from './context/ToastContext';
 import { FaltaView } from './components/FaltaView';
-import { ToastProvider } from './components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
@@ -27,34 +29,31 @@ const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>;
 const DraftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
-const FingerprintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-fingerprint"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 8 12.5a4.4 4.4 0 0 1 4-2.5c2.2 0 4.2 1.4 5 3.5"/><path d="M12 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1-.9-2-2-2Z"/><path d="M22 12c0 6-4 10-10 10S2 18 2 12"/><path d="M9 12a3 3 0 0 1 6 0c0 1.7-1.3 3-3 3s-3-1.3-3-3Z"/></svg>;
 const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
-const EyeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
+
 
 type View = 'dashboard' | 'entries' | 'delivered' | 'prefacturado' | 'invoiceWorkbench' | 'invoiceHistory' | 'catalog' | 'clients' | 'company' | 'users' | 'falta';
 
-const AppContent = () => {
+const App = () => {
     const [view, setView] = useState<View>('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const { isAdmin, currentUser, logout, registerBiometrics, simulatedRole, setSimulatedRole } = useData();
+    
+    const { isAuthenticated, loading, logout } = useAuth();
+    const { users, currentUser, isAdmin } = useData();
+    const { addToast } = useToast();
 
-    if (!currentUser) {
+    const pendingApprovalsCount = useMemo(() => {
+        return users.filter(user => !user.isApproved).length;
+    }, [users]);
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-screen w-screen bg-brand-bg text-brand-accent">Loading...</div>;
+    }
+
+    if (!isAuthenticated) {
         return <LoginScreen />;
     }
     
-    const handleViewAs = () => {
-        if (currentUser.role !== 'admin') return;
-        if (simulatedRole === null) setSimulatedRole('manager');
-        else if (simulatedRole === 'manager') setSimulatedRole('user');
-        else if (simulatedRole === 'user') setSimulatedRole(null);
-    };
-
-    const getViewAsText = () => {
-        if (simulatedRole === 'manager') return "Viewing as: Manager";
-        if (simulatedRole === 'user') return "Viewing as: User";
-        return "Viewing as: Admin";
-    };
-
     const renderView = () => {
         switch (view) {
             case 'dashboard': return <Dashboard />;
@@ -76,7 +75,7 @@ const AppContent = () => {
         { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, roles: ['admin', 'manager', 'user'] },
         { id: 'entries', label: 'Entries', icon: <ListIcon />, roles: ['admin', 'manager', 'user'] },
         { id: 'delivered', label: 'Delivered', icon: <TruckIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'falta', label: 'Falta de Entrega', icon: <BoxIcon />, roles: ['admin', 'manager', 'user'] },
+        { id: 'falta', label: 'Pending Delivery', icon: <BoxIcon />, roles: ['admin', 'manager', 'user'] },
         { id: 'prefacturado', label: 'Prefacturado', icon: <FileCheckIcon />, roles: ['admin', 'manager', 'user'] },
         { id: 'invoiceWorkbench', label: 'Invoice Workbench', icon: <DraftIcon />, roles: ['admin'] },
         { id: 'invoiceHistory', label: 'Invoice History', icon: <HistoryIcon />, roles: ['admin'] },
@@ -87,7 +86,7 @@ const AppContent = () => {
     ];
     
     const getVisibleNavItems = (items: typeof allNavItems) => {
-      const effectiveRole = simulatedRole || currentUser.role;
+      const effectiveRole = currentUser?.role || 'user';
       return items.filter(item => item.roles.includes(effectiveRole));
     };
 
@@ -99,60 +98,66 @@ const AppContent = () => {
     return (
         <div className="flex h-screen bg-brand-bg font-sans text-brand-text-primary">
             {/* Mobile Header */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-brand-primary border-b border-brand-tertiary flex items-center px-4 z-40">
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-brand-primary border-b border-brand-tertiary flex items-center justify-between px-4 z-40">
                 <button onClick={() => setSidebarOpen(true)} className="text-brand-text-primary p-2">
                     <MenuIcon />
                 </button>
-                 <div className="flex-1 text-center text-xl font-bold">
+                 <div className="text-xl font-bold">
                     <span className="text-brand-text-primary">HAWLA</span><span className="text-brand-accent">DER</span>
                 </div>
-            </div>
+                <div className="w-10" />
+            </header>
 
             {/* Sidebar Overlay for Mobile */}
             {isSidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)}></div>}
             
             {/* Sidebar */}
             <aside className={`fixed lg:static top-0 left-0 h-full w-60 bg-brand-primary text-brand-text-secondary flex flex-col shadow-2xl z-50 transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
-                <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-brand-tertiary flex-shrink-0">
-                    <span className="text-brand-text-primary">HAWLA</span><span className="text-brand-accent">DER</span>
+                <div className="h-20 flex items-center justify-between px-4 text-2xl font-bold border-b border-brand-tertiary flex-shrink-0">
+                    <div>
+                        <span className="text-brand-text-primary">HAWLA</span><span className="text-brand-accent">DER</span>
+                    </div>
                 </div>
                 <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                     {getVisibleNavItems(allNavItems).map(item => (
                          <button key={item.id} onClick={() => handleNavClick(item.id as View)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-brand-accent text-brand-text-on-accent shadow-md' : 'hover:bg-brand-secondary hover:text-brand-text-primary'}`}>
                             {item.icon}
-                            <span className="font-semibold">{item.label}</span>
+                            <span className="font-semibold flex-grow text-left">{item.label}</span>
+                            {item.id === 'users' && isAdmin && pendingApprovalsCount > 0 && (
+                                <span className="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{pendingApprovalsCount}</span>
+                            )}
                         </button>
                     ))}
                 </nav>
-                <div className="p-4 border-t border-brand-tertiary space-y-2 flex-shrink-0">
-                    {currentUser.role === 'admin' && (
-                         <Button variant="secondary" size="sm" className="w-full" onClick={handleViewAs}>
-                            <EyeIcon /> <span className="ml-2">{getViewAsText()}</span>
-                        </Button>
-                    )}
-                    <div className="text-center text-xs text-brand-text-secondary">
-                        Logged in as: <span className="font-bold text-brand-text-primary">{currentUser.fullName}</span> ({simulatedRole ? `simulating ${simulatedRole}` : currentUser.role})
+                <div className="px-4 py-4 border-t border-brand-tertiary mt-auto">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center text-white font-bold text-lg">
+                            {currentUser?.fullName?.[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                            <p className="font-semibold text-brand-text-primary">{currentUser?.fullName}</p>
+                            <p className="text-xs">{currentUser?.email}</p>
+                        </div>
                     </div>
-                    {!currentUser.webAuthnCredentialId && (
-                        <Button variant="secondary" size="sm" className="w-full" onClick={registerBiometrics}>
-                            <FingerprintIcon /> <span className="ml-2">Register Biometrics</span>
-                        </Button>
-                    )}
-                    <button onClick={logout} className="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-lg transition-colors bg-red-700/80 hover:bg-red-700 text-warm-beige">
-                        <LogoutIcon />
-                        <span className="font-semibold">Logout</span>
-                    </button>
+                    
+                    <div className="space-y-2">
+                        <button onClick={logout} className="w-full btn-3d">
+                            <LogoutIcon />
+                            <span className="ml-2">Logout</span>
+                        </button>
+                    </div>
                 </div>
             </aside>
-            
-            <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-y-auto bg-brand-bg mt-14 lg:mt-0">
-                 <AnimatePresence mode="wait">
+
+            {/* Main content */}
+            <main className="flex-1 p-4 lg:p-6 overflow-y-auto mt-14 lg:mt-0">
+                <AnimatePresence mode="wait">
                     <motion.div
                         key={view}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        transition={{ duration: 0.2 }}
                     >
                         {renderView()}
                     </motion.div>
@@ -161,15 +166,5 @@ const AppContent = () => {
         </div>
     );
 };
-
-function App() {
-  return (
-    <DataProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </DataProvider>
-  );
-}
 
 export default App;

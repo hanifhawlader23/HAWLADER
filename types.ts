@@ -1,3 +1,4 @@
+
 export enum Status {
   Recibida = 'Recibida',
   EnProceso = 'En proceso',
@@ -15,8 +16,13 @@ export interface User {
   fullName: string;
   email: string;
   phone: string;
-  webAuthnCredentialId?: string;
   isApproved: boolean;
+}
+
+export interface Session {
+  userId: number;
+  issuedAt: number;
+  expiresAt: number;
 }
 
 export interface CompanyDetails {
@@ -55,7 +61,7 @@ export interface SizeQuantities {
 export interface EntryItem {
     id: string;
     productId: string;
-    description: string;
+    description:string;
     reference1: string;
     reference2: string;
     sizeQuantities: SizeQuantities;
@@ -146,17 +152,9 @@ export interface DataContextType {
   companyDetails: CompanyDetails;
   users: User[];
   currentUser: User | null;
-  simulatedRole: Role | null;
-  setSimulatedRole: (role: Role | null) => void;
-  login: (username: string, password?: string) => Promise<{ success: boolean; message: string; }>;
-  logout: () => void;
-  signUp: (userData: Omit<User, 'id' | 'role' | 'webAuthnCredentialId' | 'isApproved'>) => Promise<{ success: boolean; message: string }>;
-  requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; code?: string }>;
-  resetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   updateUserRole: (userId: number, role: 'admin' | 'user' | 'manager') => void;
   approveUser: (userId: number) => void;
-  registerBiometrics: () => Promise<void>;
-  loginWithBiometrics: () => Promise<{ success: boolean; message: string; }>;
+  deleteUser: (userId: number) => void;
   addEntry: (entry: Omit<Entry, 'code' | 'items'> & { items: (Partial<Omit<EntryItem, 'id' | 'unitPrice'>> & { description: string })[] }) => void;
   updateEntry: (entry: Entry) => void;
   deleteEntry: (code: number) => void;

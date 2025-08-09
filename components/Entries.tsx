@@ -1,12 +1,8 @@
 
-
-
-
-
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useData } from '../context/DataContext';
-import { Button, Card, Badge, Modal, useToast, ConfirmationModal } from './ui';
+import { Button, Card, Badge, Modal, ConfirmationModal } from './ui';
+import { useToast } from '../context/ToastContext';
 import { STATUS_COLORS, getClientColorClass } from '../constants';
 import { Status, Entry, FaltaEntry, FilterState } from '../types';
 import { DeliveryForm, EntryForm } from './Forms';
@@ -43,7 +39,7 @@ const FaltaList: React.FC<{ entries: FaltaEntry[], onRowClick: (code: number) =>
 };
 
 export const EntriesManager = () => {
-    const { entries, deleteEntry, deleteMultipleEntries, isAdmin, clients, getFaltaEntries, getEntryByCode, updateEntryStatus, getCalculatedQuantities } = useData();
+    const { entries, deleteEntry, deleteMultipleEntries, isAdmin, clients, getFaltaEntries, getEntryByCode, updateEntryStatus, getCalculatedQuantities, getEntryFinancials } = useData();
     const [isEntryModalOpen, setEntryModalOpen] = useState(false);
     const [isDeliveryModalOpen, setDeliveryModalOpen] = useState(false);
     const [selectedEntryCode, setSelectedEntryCode] = useState<number | null>(null);
@@ -62,33 +58,41 @@ export const EntriesManager = () => {
 
     const filteredBaseEntries = useMemo(() => {
         let tempEntries = [...entries];
-        // Client filter
         if (filters.clientId !== 'all') {
             const client = clients.find(c => c.id === filters.clientId);
             if (client) {
                 tempEntries = tempEntries.filter(e => e.client === client.name);
             }
         }
-        // Date filter
         return filterEntriesByDate(tempEntries, filters.dateRange, filters.startDate, filters.endDate);
     }, [entries, filters, clients]);
 
     const orderedStatuses = [Status.Recibida, Status.EnProceso, Status.Entregada, Status.Prefacturado];
 
-    const groupedEntries = useMemo(() => {
-        return filteredBaseEntries.reduce((acc, entry) => {
-            const status = entry.status;
-            if (!acc[status]) {
-                acc[status] = [];
-            }
-            acc[status].push(entry);
-            return acc;
-        }, {} as Record<Status, Entry[]>);
-    }, [filteredBaseEntries]);
+    const processedGroupedEntries = useMemo(() => {
+        const initialGroups: Record<Status, any[]> = {
+            [Status.Recibida]: [],
+            [Status.EnProceso]: [],
+            [Status.Entregada]: [],
+            [Status.Prefacturado]: [],
+        };
 
+        return filteredBaseEntries.reduce((acc, entry) => {
+            const processedEntry = {
+                ...entry,
+                recibidaQuantity: getCalculatedQuantities(entry).recibidaQuantity,
+                totalPrice: getEntryFinancials(entry).totalPrice,
+            };
+            if (acc[entry.status]) {
+                acc[entry.status].push(processedEntry);
+            }
+            return acc;
+        }, initialGroups);
+    }, [filteredBaseEntries, getCalculatedQuantities, getEntryFinancials]);
+    
     const allVisibleEntries = useMemo(() => {
-        return orderedStatuses.flatMap(status => groupedEntries[status] || []);
-    }, [groupedEntries]);
+        return orderedStatuses.flatMap(status => processedGroupedEntries[status] || []);
+    }, [processedGroupedEntries]);
 
 
     const filteredFaltaEntries = useMemo(() => {
@@ -97,129 +101,119 @@ export const EntriesManager = () => {
             .map(e => ({...e, ...getCalculatedQuantities(e)}));
     }, [getFaltaEntries, filteredBaseEntries, getCalculatedQuantities]);
 
-    const openDeliveryModal = (code: number) => {
+    const openDeliveryModal = useCallback((code: number) => {
         setSelectedEntryCode(code);
         setDeliveryModalOpen(true);
-    };
+    }, []);
 
-    const openEditModal = (entry: Entry | null) => {
+    const openEditModal = useCallback((entry: Entry | null) => {
         setEditingEntry(entry);
         setEntryModalOpen(true);
-    };
+    }, []);
 
-    const closeEntryModal = () => {
+    const closeEntryModal = useCallback(() => {
         setEditingEntry(null);
         setEntryModalOpen(false);
-    };
+    }, []);
     
-    const handleDeleteMany = async (codes: (string|number)[]) => {
+    const handleDeleteMany = useCallback(async (codes: (string|number)[]) => {
         await deleteMultipleEntries(codes as number[]);
-        addToast(`${codes.length} entr${codes.length > 1 ? 'ies' : ''} deleted.`, 'success');
-    };
+        addToast(`${codes.length} ${codes.length === 1 ? 'entry' : 'entries'} deleted.`, 'success');
+    }, [deleteMultipleEntries, addToast]);
     
-    const handleDeleteSingle = (code: number) => {
+    const handleDeleteSingle = useCallback((code: number) => {
         setDeleteTarget(code);
         setDeleteConfirmOpen(true);
-    };
+    }, []);
 
-    const confirmDeleteSingle = () => {
+    const confirmDeleteSingle = useCallback(() => {
         if (deleteTarget !== null) {
             deleteEntry(deleteTarget);
             addToast(`Entry #${deleteTarget} deleted.`, 'success');
             setDeleteConfirmOpen(false);
             setDeleteTarget(null);
         }
-    };
+    }, [deleteTarget, deleteEntry, addToast]);
 
-    const columns: any[] = [
-        { header: 'Code', accessor: 'code', headerClassName: 'px-4 py-3', className: 'px-4 py-4 font-medium text-brand-text-primary' },
-        { header: 'Date', accessor: (item: Entry) => new Date(item.date).toLocaleDateString(), headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
-        { header: 'Client', accessor: (item: Entry) => <Badge className={getClientColorClass(item.client, clients)}>{item.client}</Badge>, headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
-        { header: 'Description', accessor: (item: Entry) => item.items.map(i => i.description).join(', '), headerClassName: 'px-4 py-3', className: 'px-4 py-4 text-brand-text-primary' },
-        { header: 'Qty', accessor: (item: Entry) => getCalculatedQuantities(item).recibidaQuantity, headerClassName: 'px-4 py-3', className: 'px-4 py-4 font-semibold text-brand-text-primary' },
-        { header: 'Input By', accessor: 'whoInput', headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
-        { 
-            header: 'Status', 
-            accessor: (item: Entry) => {
-                if (!isAdmin) {
-                    return <Badge className={STATUS_COLORS[item.status]}>{item.status}</Badge>;
-                }
-    
-                const arrowColor = item.status === Status.EnProceso ? 'text-deep-rose' : 'text-white';
-                const optionClass = "bg-white text-black";
-    
-                return (
-                    <div className="relative w-full min-w-[120px]">
-                        <select
-                            value={item.status}
-                            onChange={(e) => updateEntryStatus(item.code, e.target.value as Status)}
-                            className={`appearance-none w-full text-center px-2 py-1.5 text-xs font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary focus:ring-brand-accent transition-colors ${STATUS_COLORS[item.status]}`}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <option className={optionClass} value={Status.Prefacturado}>{Status.Prefacturado}</option>
-                            <option className={optionClass} value={Status.Entregada}>{Status.Entregada}</option>
-                            <option className={optionClass} value={Status.Recibida} disabled>{Status.Recibida}</option>
-                            <option className={optionClass} value={Status.EnProceso} disabled>{Status.EnProceso}</option>
-                        </select>
-                        <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${arrowColor}`}>
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+    const columns = useMemo(() => {
+        const baseColumns: any[] = [
+            { header: 'Code', accessor: 'code', headerClassName: 'px-4 py-3', className: 'px-4 py-4 font-medium text-brand-text-primary' },
+            { header: 'Date', accessor: (item: Entry) => new Date(item.date).toLocaleDateString(), headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
+            { header: 'Client', accessor: (item: Entry) => <Badge className={getClientColorClass(item.client, clients)}>{item.client}</Badge>, headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
+            { header: 'Description', accessor: (item: Entry) => item.items.map(i => i.description).join(', '), headerClassName: 'px-4 py-3', className: 'px-4 py-4 text-brand-text-primary' },
+            { header: 'Qty', accessor: 'recibidaQuantity', headerClassName: 'px-4 py-3', className: 'px-4 py-4 font-semibold text-brand-text-primary' },
+            { header: 'Input By', accessor: 'whoInput', headerClassName: 'px-4 py-3', className: 'px-4 py-4' },
+            { 
+                header: 'Status', 
+                accessor: (item: Entry) => {
+                    if (!isAdmin) return <Badge className={STATUS_COLORS[item.status]}>{item.status}</Badge>;
+                    const optionClass = "bg-white text-black";
+                    return (
+                        <div className="relative w-full min-w-[120px]">
+                            <select
+                                value={item.status}
+                                onChange={(e) => updateEntryStatus(item.code, e.target.value as Status)}
+                                className={`appearance-none w-full text-center px-2 py-1.5 text-xs font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary focus:ring-brand-accent transition-colors ${STATUS_COLORS[item.status]}`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <option className={optionClass} value={Status.Prefacturado}>{Status.Prefacturado}</option>
+                                <option className={optionClass} value={Status.Entregada}>{Status.Entregada}</option>
+                                <option className={optionClass} value={Status.Recibida} disabled>{Status.Recibida}</option>
+                                <option className={optionClass} value={Status.EnProceso} disabled>{Status.EnProceso}</option>
+                            </select>
+                            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${item.status === Status.EnProceso ? 'text-deep-rose' : 'text-white'}`}>
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
                         </div>
-                    </div>
-                );
+                    );
+                },
+                headerClassName: 'px-4 py-3', 
+                className: 'px-4 py-4' 
             },
-            headerClassName: 'px-4 py-3', 
-            className: 'px-4 py-4' 
-        },
-    ];
+        ];
+        
+        if (isAdmin) {
+            baseColumns.push(
+                { header: 'Total Value', accessor: (item: any) => `€${item.totalPrice.toFixed(2)}`, headerClassName: 'px-4 py-3 text-right', className: 'px-4 py-4 text-right font-semibold text-brand-text-primary' }
+            );
+        }
+        
+        baseColumns.push({
+            header: 'Actions',
+            accessor: (item: Entry) => (
+                <div className="space-x-2 text-center flex justify-center items-center">
+                    {isAdmin && <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); openEditModal(item);}}>Edit</Button>}
+                    {item.status !== Status.Entregada && <Button size="sm" onClick={(e) => { e.stopPropagation(); openDeliveryModal(item.code);}}>Add Delivery</Button>}
+                    {isAdmin && <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDeleteSingle(item.code); }}>Delete</Button>}
+                </div>
+            ),
+            headerClassName: 'px-4 py-3 text-center',
+            className: 'px-4 py-4'
+        });
+
+        return baseColumns;
+    }, [isAdmin, clients, openEditModal, openDeliveryModal, handleDeleteSingle, updateEntryStatus]);
     
-    if (isAdmin) {
-        columns.push(
-            { header: 'Total Value', accessor: (item: Entry) => `€${useData().getEntryFinancials(item).totalPrice.toFixed(2)}`, headerClassName: 'px-4 py-3 text-right', className: 'px-4 py-4 text-right font-semibold text-brand-text-primary' }
-        );
-    }
-    
-    columns.push({
-        header: 'Actions',
-        accessor: (item: Entry) => (
-            <div className="space-x-2 text-center flex justify-center items-center">
-                {isAdmin && <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); openEditModal(item);}}>Edit</Button>}
-                {item.status !== Status.Entregada && <Button size="sm" onClick={(e) => { e.stopPropagation(); openDeliveryModal(item.code);}}>Add Delivery</Button>}
-                {isAdmin && <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDeleteSingle(item.code); }}>Delete</Button>}
-            </div>
-        ),
-        headerClassName: 'px-4 py-3 text-center',
-        className: 'px-4 py-4'
-    });
-    
-    const exportColumns = [
+    const exportColumns = useMemo(() => [
       { title: 'Code', dataKey: 'code' as const },
-      { title: 'Date', dataKey: (item: Entry) => new Date(item.date).toLocaleDateString() },
+      { title: 'Date', dataKey: (item: any) => new Date(item.date).toLocaleDateString() },
       { title: 'Client', dataKey: 'client' as const },
-      { title: 'Description', dataKey: (item: Entry) => item.items.map(i => i.description).join(', ') },
-      { title: 'Quantity', dataKey: (item: Entry) => getCalculatedQuantities(item).recibidaQuantity },
+      { title: 'Description', dataKey: (item: any) => item.items.map(i => i.description).join(', ') },
+      { title: 'Quantity', dataKey: 'recibidaQuantity' as const },
       { title: 'Input By', dataKey: 'whoInput' as const },
       { title: 'Status', dataKey: 'status' as const },
-      { title: 'Total Value (€)', dataKey: (item: Entry) => useData().getEntryFinancials(item).totalPrice.toFixed(2) },
-    ];
+      { title: 'Total Value (€)', dataKey: (item: any) => item.totalPrice.toFixed(2) },
+    ], []);
 
     const containerVariants = {
         hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-            staggerChildren: 0.2,
-            },
-        },
+        visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
     };
 
     const itemVariants = {
         hidden: { y: 20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-        },
+        visible: { y: 0, opacity: 1 },
     };
-
 
     return (
         <div className="space-y-6">
@@ -250,7 +244,7 @@ export const EntriesManager = () => {
                 className="space-y-6"
             >
             {orderedStatuses.map(status => {
-                const entriesForStatus = groupedEntries[status] || [];
+                const entriesForStatus = processedGroupedEntries[status] || [];
                 if (entriesForStatus.length === 0) return null;
 
                 return (
@@ -258,7 +252,7 @@ export const EntriesManager = () => {
                         <Card>
                             <div className="flex justify-center items-baseline mb-4">
                             <Badge className={`${STATUS_COLORS[status]} text-lg`}>{status}</Badge>
-                            <span className="ml-2 text-brand-text-secondary font-semibold">({entriesForStatus.length} entr{entriesForStatus.length > 1 ? 'ies' : ''})</span>
+                            <span className="ml-2 text-brand-text-secondary font-semibold">({entriesForStatus.length} entr{entriesForStatus.length > 1 ? 'ies' : ''}y)</span>
                             </div>
                             <SelectableTable 
                                 data={entriesForStatus}

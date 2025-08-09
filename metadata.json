@@ -1,8 +1,8 @@
-
 {
   "name": "HAWLADER",
   "description": "A comprehensive application for a textile manufacturing company to manage entries, deliveries, inventory, and invoicing with dashboards and reporting.",
   "requestFramePermissions": [
     "camera"
-  ]
+  ],
+  "prompt": ""
 }

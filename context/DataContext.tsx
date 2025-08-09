@@ -1,29 +1,8 @@
-import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { Entry, Delivery, Status, FaltaEntry, Product, SizeQuantities, Client, CompanyDetails, Document, DocumentItem, DocumentType, EntryItem, DeliveryItem, User, DataContextType, Role } from '../types';
+
+import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
+import { Entry, Delivery, Status, FaltaEntry, Product, SizeQuantities, Client, CompanyDetails, Document, DocumentItem, DocumentType, EntryItem, DeliveryItem, User, DataContextType, Role, Session } from '../types';
 import { INITIAL_ENTRIES, INITIAL_DELIVERIES, INITIAL_PRODUCTS, INITIAL_CLIENTS, INITIAL_COMPANY_DETAILS, SIZES, INITIAL_USERS } from '../constants';
-
-// --- WebAuthn Helper Functions ---
-function base64urlToBuffer(base64urlString: string): ArrayBuffer {
-  const base64 = base64urlString.replace(/-/g, '+').replace(/_/g, '/');
-  const raw = window.atob(base64);
-  const buffer = new ArrayBuffer(raw.length);
-  const array = new Uint8Array(buffer);
-  for (let i = 0; i < raw.length; i++) {
-    array[i] = raw.charCodeAt(i);
-  }
-  return buffer;
-}
-
-function bufferToBase64url(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let str = '';
-  for (const charCode of bytes) {
-    str += String.fromCharCode(charCode);
-  }
-  const base64 = window.btoa(str);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-// --- End Helper Functions ---
+import { useAuth } from './AuthContext';
 
 
 const getSumOfQuantities = (quantities: SizeQuantities): number => {
@@ -34,6 +13,8 @@ const getSumOfQuantities = (quantities: SizeQuantities): number => {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user: authUser } = useAuth();
+  
   // Load initial state from localStorage or use constants
   const [entries, setEntries] = useState<Entry[]>(() => JSON.parse(localStorage.getItem('entries') || 'null') || INITIAL_ENTRIES);
   const [deliveries, setDeliveries] = useState<Delivery[]>(() => JSON.parse(localStorage.getItem('deliveries') || 'null') || INITIAL_DELIVERIES);
@@ -42,9 +23,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails>(() => JSON.parse(localStorage.getItem('companyDetails') || 'null') || INITIAL_COMPANY_DETAILS);
   const [documents, setDocuments] = useState<Document[]>(() => JSON.parse(localStorage.getItem('documents') || 'null') || []);
   const [users, setUsers] = useState<User[]>(() => JSON.parse(localStorage.getItem('users') || 'null') || INITIAL_USERS);
-  const [currentUser, setCurrentUser] = useState<User | null>(() => JSON.parse(localStorage.getItem('currentUser') || 'null'));
-  const [simulatedRole, setSimulatedRole] = useState<Role | null>(() => JSON.parse(localStorage.getItem('simulatedRole') || 'null'));
-  const [passwordResetRequests, setPasswordResetRequests] = useState<Record<string, { code: string; timestamp: number }>>({});
+  
+  const currentUser = useMemo(() => {
+    if (!authUser) return null;
+    return users.find(u => u.username === authUser.email) || null;
+  }, [authUser, users]);
 
   // Save to localStorage whenever state changes, but strip out large image data to prevent quota errors.
   useEffect(() => {
@@ -77,176 +60,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
   }, [users]);
-  
-  useEffect(() => {
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-  }, [currentUser]);
-  
-  useEffect(() => {
-    localStorage.setItem('simulatedRole', JSON.stringify(simulatedRole));
-  }, [simulatedRole]);
 
-  const effectiveRole = currentUser?.role === 'admin' && simulatedRole ? simulatedRole : currentUser?.role;
-  const isAdmin = effectiveRole === 'admin';
-  const isManager = effectiveRole === 'admin' || effectiveRole === 'manager';
-
-  const login = useCallback(async (username: string, password?: string): Promise<{ success: boolean; message: string; }> => {
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    if (!user) {
-        return { success: false, message: 'Invalid username or password.' };
-    }
-    if (!user.isApproved) {
-        return { success: false, message: 'Your account is awaiting admin approval.' };
-    }
-    setCurrentUser(user);
-    return { success: true, message: 'Login successful!' };
-  }, [users]);
-  
-  const signUp = useCallback(async (userData: Omit<User, 'id' | 'role' | 'webAuthnCredentialId' | 'isApproved'>): Promise<{ success: boolean; message: string }> => {
-    if (!userData.username || !userData.password || !userData.email || !userData.fullName) {
-        return { success: false, message: 'All fields except phone are required.' };
-    }
-    const emailExists = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
-    if (emailExists) {
-      return { success: false, message: 'Email address already exists.' };
-    }
-    const usernameExists = users.find(u => u.username.toLowerCase() === userData.username.toLowerCase());
-    if (usernameExists) {
-      return { success: false, message: 'Username already exists. Please choose another one.' };
-    }
-
-    const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-    const newUser: User = {
-      id: newId,
-      ...userData,
-      role: 'user', // New users are always 'user'
-      isApproved: false, // New users need admin approval
-    };
-
-    setUsers(prev => [...prev, newUser]);
-    return { success: true, message: 'Sign up successful! An admin will review your request shortly.' };
-  }, [users]);
-
-  const requestPasswordReset = useCallback(async (email: string): Promise<{ success: boolean; message: string; code?: string }> => {
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (!user) {
-        return { success: false, message: "No user found with that email address." };
-      }
-      const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-      setPasswordResetRequests(prev => ({ ...prev, [email.toLowerCase()]: { code, timestamp: Date.now() } }));
-      // In a real app, we would email the code. Here we return it for simulation.
-      return { success: true, message: "Reset code generated.", code };
-  }, [users]);
-
-  const resetPassword = useCallback(async (email: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-      const request = passwordResetRequests[email.toLowerCase()];
-      if (!request) {
-        return { success: false, message: "No password reset request found for this email." };
-      }
-      // Expire after 10 minutes (600000 ms)
-      if (Date.now() - request.timestamp > 600000) {
-        setPasswordResetRequests(prev => {
-          const newReqs = { ...prev };
-          delete newReqs[email.toLowerCase()];
-          return newReqs;
-        });
-        return { success: false, message: "Reset code has expired. Please request a new one." };
-      }
-      if (request.code !== code) {
-        return { success: false, message: "Invalid reset code." };
-      }
-      setUsers(prevUsers => prevUsers.map(u => 
-        u.email.toLowerCase() === email.toLowerCase() ? { ...u, password: newPassword } : u
-      ));
-      setPasswordResetRequests(prev => {
-        const newReqs = { ...prev };
-        delete newReqs[email.toLowerCase()];
-        return newReqs;
-      });
-      return { success: true, message: "Password has been reset successfully." };
-  }, [passwordResetRequests]);
-
-  const registerBiometrics = useCallback(async () => {
-    if (!currentUser) return;
-    try {
-        const credential = await navigator.credentials.create({
-            publicKey: {
-                challenge: crypto.getRandomValues(new Uint8Array(32)),
-                rp: { name: 'HAWLADER App', id: window.location.hostname },
-                user: {
-                    id: new TextEncoder().encode(currentUser.username),
-                    name: currentUser.email,
-                    displayName: currentUser.fullName,
-                },
-                pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-                authenticatorSelection: {
-                    authenticatorAttachment: 'platform', 
-                    userVerification: 'required',
-                },
-                timeout: 60000,
-            }
-        });
-
-        if (credential instanceof PublicKeyCredential) {
-            const credentialId = bufferToBase64url(credential.rawId);
-            setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, webAuthnCredentialId: credentialId } : u));
-            alert('Biometric registration successful!');
-        }
-    } catch (error) {
-        console.error('Biometric registration failed:', error);
-        alert(`Biometric registration failed.`);
-    }
-  }, [currentUser]);
-
-  const loginWithBiometrics = useCallback(async (): Promise<{ success: boolean; message: string; }> => {
-    try {
-        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        if (!available) {
-            return { success: false, message: 'Biometric login not supported on this device.' };
-        }
-
-        const registeredUsers = users.filter(u => u.webAuthnCredentialId).map(u => ({
-            type: 'public-key' as PublicKeyCredentialType,
-            id: base64urlToBuffer(u.webAuthnCredentialId!),
-        }));
-
-        if (registeredUsers.length === 0) {
-            return { success: false, message: 'No biometric credentials registered. Please register first.' };
-        }
-
-        const credential = await navigator.credentials.get({
-            publicKey: {
-                challenge: crypto.getRandomValues(new Uint8Array(32)),
-                timeout: 60000,
-                allowCredentials: registeredUsers,
-                userVerification: 'required',
-                rpId: window.location.hostname,
-            }
-        });
-
-        if (credential instanceof PublicKeyCredential) {
-            const credentialId = bufferToBase64url(credential.rawId);
-            const user = users.find(u => u.webAuthnCredentialId === credentialId);
-            if (user) {
-                 if (!user.isApproved) {
-                    return { success: false, message: 'Your account is awaiting admin approval.' };
-                }
-                setCurrentUser(user);
-                return { success: true, message: 'Login successful!' };
-            }
-        }
-        return { success: false, message: 'Biometric login failed. User not found.' };
-    } catch (error) {
-        console.error('Biometric login failed:', error);
-        return { success: false, message: `Biometric login failed.` };
-    }
-  }, [users]);
-
-
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    setSimulatedRole(null);
-  }, []);
+  const isAdmin = useMemo(() => currentUser?.role === 'admin', [currentUser]);
+  const isManager = useMemo(() => currentUser?.role === 'admin' || currentUser?.role === 'manager', [currentUser]);
 
   const updateUserRole = useCallback((userId: number, role: 'admin' | 'user' | 'manager') => {
     setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, role } : u));
@@ -255,6 +71,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const approveUser = useCallback((userId: number) => {
     setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, isApproved: true } : u));
   }, []);
+
+  const deleteUser = useCallback((userId: number) => {
+    if (currentUser?.id === userId) {
+        console.error("Cannot delete the currently logged-in user.");
+        return;
+    }
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  }, [currentUser]);
   
     const getRemainingQuantitiesForItem = useCallback((entry: Entry, entryItemId: string): SizeQuantities => {
     const entryItem = entry.items.find(i => i.id === entryItemId);
@@ -618,9 +442,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <DataContext.Provider value={{ 
-        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, login, logout, signUp, requestPasswordReset, resetPassword, updateUserRole, approveUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
-        isAdmin, isManager, simulatedRole, setSimulatedRole, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
-        deleteDocument, deleteMultipleDocuments, getNewDocumentNumber, getEntryFinancials, getRevenueData, getLatestDeliveryDateForEntry, getRemainingQuantitiesForItem, registerBiometrics, loginWithBiometrics
+        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, updateUserRole, approveUser, deleteUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
+        isAdmin, isManager, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
+        deleteDocument, deleteMultipleDocuments, getNewDocumentNumber, getEntryFinancials, getRevenueData, getLatestDeliveryDateForEntry, getRemainingQuantitiesForItem
     }}>
       {children}
     </DataContext.Provider>

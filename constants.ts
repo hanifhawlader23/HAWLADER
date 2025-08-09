@@ -1,3 +1,4 @@
+
 import { Status, User, Product, Entry, Delivery, Client, CompanyDetails } from './types';
 
 export const SIZES: string[] = ['0', '2', '4', '6', '8', '10', '12', '14', '16', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '8XL', '10XL'];
@@ -52,7 +53,12 @@ export const getClientColorClass = (clientName: string, allClients: {name: strin
 };
 
 
-export const CHART_COLORS = ['#B76E79', '#8B5E5A', '#D4A5A5', '#F6D1C1'];
+export const CHART_COLORS = {
+    BLUE: '#3B82F6',
+    GREEN: '#10B981',
+    ORANGE: '#F59E0B',
+    GRAY: '#94A3B8'
+};
 
 
 export const INITIAL_COMPANY_DETAILS: CompanyDetails = {

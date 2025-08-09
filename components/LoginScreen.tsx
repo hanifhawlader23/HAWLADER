@@ -1,144 +1,54 @@
+
 import React, { useState, useEffect } from 'react';
-import { useData } from '../context/DataContext';
 import { Card, Input, Button, Modal } from './ui';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+
+const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
+    const { addToast } = useToast();
+    const [email, setEmail] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        addToast(`Password reset instructions sent to ${email}`, 'success');
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Forgot Password" size="md">
+            <p className="text-brand-text-secondary mb-4">Enter your email address and we'll send you instructions to reset your password.</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Input label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit">Send Instructions</Button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
 
 export const LoginScreen: React.FC = () => {
-  const { login, signUp, loginWithBiometrics, requestPasswordReset, resetPassword } = useData();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const { login, loading } = useAuth();
+  const { addToast } = useToast();
   
-  // Common fields
-  const [username, setUsername] = useState(''); // This is now email
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
-  // Sign up specific fields
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [actualUsername, setActualUsername] = useState('');
+  const [isForgotModalOpen, setForgotModalOpen] = useState(false);
 
-  const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
-
-  // Forgot password state
-  const [resetStep, setResetStep] = useState(1); // 1: enter email, 2: enter code and new pass, 3: success
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
-  const [resetError, setResetError] = useState('');
-
-  
-  useEffect(() => {
-    async function checkBiometrics() {
-        if (window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
-            setIsBiometricSupported(true);
-        }
-    }
-    checkBiometrics();
-  }, []);
-
-  const resetMainForm = () => {
-    setUsername('');
-    setPassword('');
-    setConfirmPassword('');
-    setFullName('');
-    setPhone('');
-    setActualUsername('');
-    setError('');
-    setSuccessMessage('');
-  };
-
-  const resetForgotPasswordForm = () => {
-    setResetStep(1);
-    setResetEmail('');
-    setResetCode('');
-    setGeneratedCode('');
-    setNewPassword('');
-    setConfirmNewPassword('');
-    setResetMessage('');
-    setResetError('');
-  }
-
-  const handleOpenForgotPassword = () => {
-    resetForgotPasswordForm();
-    setForgotPasswordOpen(true);
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccessMessage('');
-
-    if (isSignUp) {
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
+    try {
+        const success = await login(email, password);
+        if (!success) {
+            addToast('Login failed. Check credentials or approval status.', 'error');
         }
-        const result = await signUp({
-            username: actualUsername,
-            password,
-            fullName,
-            email: username, // 'username' state is used for email
-            phone
-        });
-        if (result.success) {
-            setSuccessMessage(result.message);
-            setIsSignUp(false); // Switch to login view
-            resetMainForm();
-        } else {
-            setError(result.message);
-        }
-    } else {
-        const result = await login(username, password);
-        if (!result.success) {
-            setError(result.message);
-        }
+    } catch (err) {
+        console.error('Login failed:', err);
+        addToast('An unexpected error occurred during login.', 'error');
     }
   };
   
-  const handleBiometricLogin = async () => {
-      setError('');
-      const result = await loginWithBiometrics();
-      if (!result.success) {
-          setError(result.message);
-      }
-  }
-
-  const handleRequestResetCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetError('');
-    setResetMessage('');
-    const result = await requestPasswordReset(resetEmail);
-    if (result.success && result.code) {
-        setGeneratedCode(result.code);
-        setResetStep(2);
-    } else {
-        setResetError(result.message);
-    }
-  }
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetError('');
-    setResetMessage('');
-    if (newPassword !== confirmNewPassword) {
-        setResetError("New passwords do not match.");
-        return;
-    }
-    const result = await resetPassword(resetEmail, resetCode, newPassword);
-    if (result.success) {
-        setResetMessage(result.message);
-        setResetStep(3);
-    } else {
-        setResetError(result.message);
-    }
-  }
-
-
   return (
     <>
     <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
@@ -149,119 +59,29 @@ export const LoginScreen: React.FC = () => {
           </h1>
           <p className="text-brand-text-secondary mt-2">Manufacturing Management</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input 
-            label="Email" 
-            type="email" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            required 
-            placeholder="hanif@hawlader.eu"
-            autoComplete="email"
-          />
-          {isSignUp && (
-            <>
-              <Input label="Full Name" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-              <Input label="Phone Number" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Input label="Username" type="text" value={actualUsername} onChange={(e) => setActualUsername(e.target.value)} required />
-            </>
-          )}
-          <Input 
-            label="Password" 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-            placeholder="••••••••••••"
-            autoComplete={isSignUp ? "new-password" : "current-password"}
-          />
-          {isSignUp && (
-             <Input 
-                label="Confirm Password" 
-                type="password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
-                required 
-                placeholder="••••••••••••"
-                autoComplete="new-password"
-            />
-          )}
-          
-          <div className="text-right text-xs">
-            <button type="button" onClick={handleOpenForgotPassword} className="font-medium text-brand-accent hover:text-brand-accent-hover focus:outline-none">
-              Forgot Password?
-            </button>
+
+        <form onSubmit={handleSignIn} className="space-y-4">
+          <h2 className="text-xl font-semibold text-center text-brand-text-primary">Sign In</h2>
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password"/>
+          <div className="text-right">
+            <button type="button" onClick={() => setForgotModalOpen(true)} className="text-sm text-brand-accent hover:underline">Forgot password?</button>
           </div>
-
-          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-          {successMessage && <p className="text-sm text-green-500 text-center">{successMessage}</p>}
-
-
-          <div className="flex flex-col gap-2">
-            <Button type="submit" className="w-full" size="lg">
-              {isSignUp ? 'Sign Up' : 'Login'}
-            </Button>
-            {!isSignUp && isBiometricSupported && (
-              <Button type="button" variant="secondary" className="w-full" size="lg" onClick={handleBiometricLogin}>
-                Login with Fingerprint/Face ID
+          
+          <div className="flex flex-col gap-3 pt-2">
+              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
-            )}
           </div>
-          
-          <p className="text-center text-sm text-brand-text-secondary">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}
-            <button 
-              type="button" 
-              onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  resetMainForm();
-              }} 
-              className="font-semibold text-brand-accent hover:text-brand-accent-hover ml-1 focus:outline-none"
-            >
-              {isSignUp ? 'Login' : 'Sign Up'}
-            </button>
-          </p>
         </form>
+        
+        <div className="mt-6 text-center text-xs text-brand-text-secondary">
+          <p>This is a managed system. Access is restricted.</p>
+          <p>Please contact an administrator if you need an account.</p>
+        </div>
       </Card>
     </div>
-
-    <Modal isOpen={isForgotPasswordOpen} onClose={() => setForgotPasswordOpen(false)} title="Reset Password">
-        {resetStep === 1 && (
-            <form onSubmit={handleRequestResetCode} className="space-y-4">
-                <p className="text-brand-text-secondary">Enter your account's email address and we will send you a password reset code.</p>
-                <Input label="Email" type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required autoFocus />
-                 {resetError && <p className="text-sm text-red-500">{resetError}</p>}
-                <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="secondary" onClick={() => setForgotPasswordOpen(false)}>Cancel</Button>
-                    <Button type="submit">Send Reset Code</Button>
-                </div>
-            </form>
-        )}
-        {resetStep === 2 && (
-             <form onSubmit={handleResetPassword} className="space-y-4">
-                <p className="text-sm text-green-500 bg-green-900/20 p-3 rounded-md">
-                    For demonstration purposes, your reset code is: <strong className="font-bold text-lg tracking-widest">{generatedCode}</strong>
-                    <br/>In a real application, this would be sent to your email.
-                </p>
-                <Input label="Reset Code" type="text" value={resetCode} onChange={e => setResetCode(e.target.value)} required autoFocus />
-                <Input label="New Password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
-                <Input label="Confirm New Password" type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} required />
-                {resetError && <p className="text-sm text-red-500">{resetError}</p>}
-                <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="secondary" onClick={() => setForgotPasswordOpen(false)}>Cancel</Button>
-                    <Button type="submit">Reset Password</Button>
-                </div>
-            </form>
-        )}
-        {resetStep === 3 && (
-            <div className="space-y-4">
-                <p className="text-green-500">{resetMessage}</p>
-                <div className="flex justify-end">
-                    <Button onClick={() => setForgotPasswordOpen(false)}>Back to Login</Button>
-                </div>
-            </div>
-        )}
-    </Modal>
+    <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setForgotModalOpen(false)} />
     </>
   );
 };

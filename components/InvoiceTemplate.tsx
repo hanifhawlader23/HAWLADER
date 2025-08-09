@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Document, Client, Status } from '../types';
+import { Document, Client, Status, DocumentItem } from '../types';
 import { Button, Input, Textarea, Badge } from './ui';
 import { useData } from '../context/DataContext';
 import { STATUS_COLORS } from '../constants';
@@ -23,7 +22,6 @@ const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" he
 export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, isEditing = false, onItemChange, onTaxRateChange, onDocumentNumberChange, onDateChange }) => {
   const { clients, companyDetails } = useData();
   const [client, setClient] = useState<Client | undefined>(undefined);
-  const [companyLogoSize, setCompanyLogoSize] = useState(100); // Default size in px
   const uniqueEntryCodes = [...new Set(document.items.map(item => item.entryCode))].sort((a, b) => a - b);
 
   useEffect(() => {
@@ -32,14 +30,7 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
   }, [document, clients]);
 
   const handlePrint = () => {
-    const printContents = window.document.getElementById(`printable-area-${document.id}`)?.innerHTML;
-    if (printContents) {
-      const printWindow = window.open('', '_blank');
-      printWindow?.document.write(`<html><head><title>Document</title><script src="https://cdn.tailwindcss.com"></script><style>@page { size: A4; margin: 1cm; } @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; } .no-print { display: none; } td, th { border: 1px solid #D4A5A5 !important; } .print-bg-color { background-color: #F6E9E9 !important; } .print-client-bg-color { background-color: #FEF3F1 !important; } .print-header-bg { background-color: #F6D1C1 !important; } .print-row-bg-even { background-color: #FAF3F0 !important; } .print-row-bg-odd { background-color: white !important; } }</style></head><body class="bg-white text-black">${printContents}</body></html>`);
-      printWindow?.document.close();
-      printWindow?.focus();
-      printWindow?.print();
-    }
+    window.print();
   };
 
   const handleDownloadPdf = () => {
@@ -98,7 +89,6 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
         doc.setTextColor(textSecondary);
         doc.text(`PERIODO: `, 14, 80);
         doc.setTextColor(textPrimary);
-        // Correcting for potential timezone issues when parsing date string
         const startDate = new Date(document.startDate);
         startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
         const endDate = new Date(document.endDate);
@@ -124,25 +114,15 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
     ]);
     
     const statusColorsPDF: Record<Status, string> = {
-        [Status.Recibida]: '#3B82F6', // blue-500
-        [Status.EnProceso]: '#FBBF24', // yellow-400
-        [Status.Entregada]: '#22C55E', // green-500
-        [Status.Prefacturado]: '#0EA5E9', // sky-500
+        [Status.Recibida]: '#3B82F6',
+        [Status.EnProceso]: '#FBBF24',
+        [Status.Entregada]: '#22C55E',
+        [Status.Prefacturado]: '#0EA5E9',
     };
 
-    // Use \n for manual line breaks in headers to prevent overlapping.
-    const head = [[
-        'Código',
-        'Refe\nrencia',
-        'Producto',
-        'Reci\nbida',
-        'Entre\ngada',
-        'Falta',
-        'Fecha de\nsalida',
-        'Status',
-        'Precio\n/U',
-        'Total'
-    ]];
+    const head = [[ 'Código', 'Referencia', 'Producto', 'Recibida', 'Entregada', 'Falta', 'Fecha de salida', 'Status', 'Precio/U', 'Total' ]];
+    
+    const totalWidth = doc.internal.pageSize.getWidth() - 28; // 14 margin on each side
 
     autoTable(doc, {
         startY: tableStartY,
@@ -150,14 +130,14 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
         body: body,
         theme: 'grid',
         headStyles: { 
-            fillColor: '#F6D1C1', // brand-secondary
+            fillColor: '#F6D1C1',
             textColor: textPrimary,
-            fontStyle: 'normal', // Changed from 'bold' for better spacing
+            fontStyle: 'bold',
             halign: 'center',
             valign: 'middle',
             lineColor: borderPrimary,
             lineWidth: 0.2,
-            fontSize: 7.5, // Slightly reduced for more robust fitting
+            fontSize: 8.5,
         },
         styles: {
             font: 'helvetica',
@@ -168,21 +148,20 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
             textColor: textPrimary,
             valign: 'middle',
         },
-        // Column widths are meticulously adjusted to prevent text overlap, with a small buffer.
         columnStyles: {
-            0: { halign: 'center', cellWidth: 11 },    // Código
-            1: { halign: 'left', cellWidth: 22 },      // Referencia
-            2: { halign: 'left', cellWidth: 45 },      // Producto
-            3: { halign: 'center', cellWidth: 15 },     // Recibida
-            4: { halign: 'center', cellWidth: 15 },     // Entregada
-            5: { halign: 'center', cellWidth: 13 },     // Falta
-            6: { halign: 'center', cellWidth: 22 },     // Fecha de salida
-            7: { halign: 'center', cellWidth: 15 },     // Status
-            8: { halign: 'right', cellWidth: 15 },     // Precio /U
-            9: { halign: 'right', cellWidth: 15 },     // Total
+            0: { halign: 'center', cellWidth: totalWidth * 0.07 },
+            1: { halign: 'left', cellWidth: totalWidth * 0.10 },
+            2: { halign: 'left', cellWidth: totalWidth * 0.32 },
+            3: { halign: 'center', cellWidth: totalWidth * 0.07 },
+            4: { halign: 'center', cellWidth: totalWidth * 0.07 },
+            5: { halign: 'center', cellWidth: totalWidth * 0.07 },
+            6: { halign: 'center', cellWidth: totalWidth * 0.12 },
+            7: { halign: 'center', cellWidth: totalWidth * 0.06 },
+            8: { halign: 'right', cellWidth: totalWidth * 0.06 },
+            9: { halign: 'right', cellWidth: totalWidth * 0.06 },
         },
         didDrawCell: (data) => {
-            if (data.column.index === 7 && data.cell.section === 'body') { // Status column
+            if (data.column.index === 7 && data.cell.section === 'body') {
                 const status = data.cell.raw as Status;
                 const color = statusColorsPDF[status] || '#8B5E5A';
                 const cellWidth = data.cell.width;
@@ -200,9 +179,8 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
             }
         },
         didDrawPage: (data) => {
-            // Totals section
             let finalY = data.cursor?.y ? data.cursor.y + 10 : 250;
-            if (finalY > 240) { // Add new page if not enough space
+            if (finalY > 240) {
                 doc.addPage();
                 finalY = 20;
             }
@@ -244,14 +222,14 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
     doc.save(`${document.documentType}-${document.documentNumber}.pdf`);
 };
 
-  const renderItemRow = (item: any, index: number) => {
+  const renderItemRow = (item: DocumentItem, index: number) => {
       const isEven = uniqueEntryCodes.indexOf(item.entryCode) % 2 === 0;
-      const rowBgClass = isEven ? 'print-row-bg-even bg-brand-bg' : 'print-row-bg-odd bg-brand-primary';
+      const rowBgClass = isEven ? 'bg-brand-bg' : 'bg-brand-primary';
 
       return (
         <tr key={`${item.entryCode}-${item.productCode}`} className={rowBgClass}>
-            <td className="px-1 py-2 text-center border border-brand-tertiary">{item.entryCode}</td>
-            <td className="px-2 py-2 text-left border border-brand-tertiary">
+            <td className="px-1 py-2 text-center">{item.entryCode}</td>
+            <td className="px-2 py-2 text-left">
                 {isEditing ? (
                   <>
                     <Input unstyled value={item.reference1} onChange={(e) => onItemChange && onItemChange(index, 'reference1', e.target.value)} placeholder="Ref 1"/>
@@ -264,49 +242,49 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
                   </>
                 )}
             </td>
-            <td className="px-2 py-2 text-left border border-brand-tertiary">
+            <td className="px-2 py-2 text-left">
                 {isEditing ? (
                   <Textarea unstyled value={item.description} onChange={(e) => onItemChange && onItemChange(index, 'description', e.target.value)}/>
                 ) : ( item.description )}
             </td>
-            <td className="px-1 py-2 text-center border border-brand-tertiary">{item.recibidaQuantity}</td>
-            <td className="px-1 py-2 text-center border border-brand-tertiary">
+            <td className="px-1 py-2 text-center">{item.recibidaQuantity}</td>
+            <td className="px-1 py-2 text-center">
                 {isEditing ? 
-                    <Input unstyled className="text-center" type="number" value={item.entregadaQuantity} onChange={(e) => onItemChange && onItemChange(index, 'entregadaQuantity', parseInt(e.target.value))} />
+                    <Input unstyled className="text-center" type="number" value={item.entregadaQuantity} onChange={(e) => onItemChange && onItemChange(index, 'entregadaQuantity', parseInt(e.target.value, 10) || 0)} />
                     : item.entregadaQuantity
                 }
             </td>
-            <td className="px-1 py-2 text-center border border-brand-tertiary text-red-600 font-semibold">{item.faltaQuantity}</td>
-            <td className="px-2 py-2 text-center border border-brand-tertiary text-xs">
+            <td className="px-1 py-2 text-center text-red-600 font-semibold">{item.faltaQuantity}</td>
+            <td className="px-2 py-2 text-center text-xs">
                 {item.deliveryBreakdown.map((d: any) => <div key={d.date}>{d.date} ({d.qty} pcs)</div>)}
             </td>
-            <td className="px-2 py-2 text-center border border-brand-tertiary">
+            <td className="px-2 py-2 text-center">
                 <Badge className={`${STATUS_COLORS[item.status]}`}>{item.status}</Badge>
             </td>
-            <td className="px-2 py-2 text-right border border-brand-tertiary">
+            <td className="px-2 py-2 text-right">
                 {isEditing ? 
-                    <Input unstyled className="text-right" type="number" step="0.01" value={item.unitPrice} onChange={(e) => onItemChange && onItemChange(index, 'unitPrice', parseFloat(e.target.value))} />
+                    <Input unstyled className="text-right" type="number" step="0.01" value={item.unitPrice} onChange={(e) => onItemChange && onItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)} />
                     : `€${item.unitPrice.toFixed(2)}`
                 }
             </td>
-            <td className="px-2 py-2 text-right border border-brand-tertiary font-semibold">{`€${item.total.toFixed(2)}`}</td>
+            <td className="px-2 py-2 text-right font-semibold">{`€${item.total.toFixed(2)}`}</td>
         </tr>
       );
   }
 
   return (
-    <div>
-        <div id={`printable-area-${document.id}`} className="bg-white p-8 text-black shadow-lg">
+    <div className="invoice-wrapper">
+        <div id={`printable-area-${document.id}`} className="invoice-container p-8 shadow-lg">
             {/* Header */}
             <div className="grid grid-cols-2 gap-8 mb-8">
-                <div className="print-bg-color bg-rose-50 p-4 rounded-lg">
+                <div className="bg-rose-50 p-4 rounded-lg">
                     {companyDetails.logo && <img src={companyDetails.logo} alt="Company Logo" className="h-12 w-auto mb-2" />}
                     <h2 className="font-bold text-lg mb-1">{companyDetails.name}</h2>
                     <p className="text-xs whitespace-pre-wrap">{companyDetails.address}</p>
                     <p className="text-xs">{companyDetails.email} | {companyDetails.phone}</p>
                     <p className="text-xs">VAT: {companyDetails.vatNumber}</p>
                 </div>
-                <div className="print-client-bg-color bg-rose-50 p-4 rounded-lg text-right">
+                <div className="bg-rose-50 p-4 rounded-lg text-right">
                     {client?.logo && <img src={client.logo} alt="Client Logo" className="h-12 w-auto mb-2 ml-auto" />}
                     <h2 className="font-bold text-lg mb-1">{client?.name}</h2>
                     <p className="text-xs whitespace-pre-wrap">{client?.address}</p>
@@ -354,19 +332,31 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
 
 
             {/* Table */}
-            <table className="w-full text-xs text-center border-collapse">
-                <thead className="text-xs text-brand-text-secondary uppercase print-header-bg bg-brand-secondary">
+            <table className="invoice-table text-xs text-center">
+                <colgroup>
+                    <col style={{width: '7%'}} />
+                    <col style={{width: '10%'}} />
+                    <col style={{width: '32%'}} />
+                    <col style={{width: '7%'}} />
+                    <col style={{width: '7%'}} />
+                    <col style={{width: '7%'}} />
+                    <col style={{width: '12%'}} />
+                    <col style={{width: '6%'}} />
+                    <col style={{width: '6%'}} />
+                    <col style={{width: '6%'}} />
+                </colgroup>
+                <thead className="text-xs text-brand-text-secondary uppercase bg-brand-secondary">
                     <tr>
-                        <th scope="col" className="px-1 py-3 text-center border border-brand-tertiary w-[6%]">Código</th>
-                        <th scope="col" className="px-2 py-3 text-left border border-brand-tertiary w-[12%]">Referencia</th>
-                        <th scope="col" className="px-2 py-3 text-left border border-brand-tertiary w-[24%]">Producto</th>
-                        <th scope="col" className="px-1 py-3 text-center border border-brand-tertiary w-[8%]">Recibida</th>
-                        <th scope="col" className="px-1 py-3 text-center border border-brand-tertiary w-[8%]">Entregada</th>
-                        <th scope="col" className="px-1 py-3 text-center border border-brand-tertiary w-[7%]">Falta</th>
-                        <th scope="col" className="px-2 py-3 text-center border border-brand-tertiary w-[12%]">Fecha de salida</th>
-                        <th scope="col" className="px-2 py-3 text-center border border-brand-tertiary w-[8%]">Status</th>
-                        <th scope="col" className="px-2 py-3 text-right border border-brand-tertiary w-[8%]">Precio/U</th>
-                        <th scope="col" className="px-2 py-3 text-right border border-brand-tertiary w-[7%]">Total</th>
+                        <th scope="col" className="px-1 py-3 text-center">Código</th>
+                        <th scope="col" className="px-2 py-3 text-left">Referencia</th>
+                        <th scope="col" className="px-2 py-3 text-left">Producto</th>
+                        <th scope="col" className="px-1 py-3 text-center">Recibida</th>
+                        <th scope="col" className="px-1 py-3 text-center">Entregada</th>
+                        <th scope="col" className="px-1 py-3 text-center">Falta</th>
+                        <th scope="col" className="px-2 py-3 text-center">Fecha de salida</th>
+                        <th scope="col" className="px-2 py-3 text-center">Status</th>
+                        <th scope="col" className="px-2 py-3 text-right">Precio/U</th>
+                        <th scope="col" className="px-2 py-3 text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -390,7 +380,7 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({ document, is
                         )}
                         <div className="flex justify-between">
                             <span className="font-bold text-gray-600">IVA (%):</span>
-                            <span>{isEditing ? <Input unstyled className="text-right" type="number" step="0.01" value={document.taxRate} onChange={(e) => onTaxRateChange && onTaxRateChange(parseFloat(e.target.value))} /> : `${document.taxRate.toFixed(2)}%`}</span>
+                            <span>{isEditing ? <Input unstyled className="text-right" type="number" step="0.01" value={document.taxRate} onChange={(e) => onTaxRateChange && onTaxRateChange(parseFloat(e.target.value) || 0)} /> : `${document.taxRate.toFixed(2)}%`}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-bold text-gray-600">Importe IVA:</span>

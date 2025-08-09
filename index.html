@@ -10,6 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      body {
+        --btn-focus: #B76E79; /* brand-accent */
+        --btn-bg: #FFE9E3; /* brand-primary */
+        --btn-bg-dk: #F6D1C1; /* brand-secondary */
+      }
+
       /* Responsive Table Styles */
       @media screen and (max-width: 768px) {
         .responsive-table {
@@ -54,13 +60,83 @@
       .animate-fade-in-out {
           animation: fadeInOut 5s ease-in-out forwards;
       }
+
+      /* User Requested Styles for Invoice */
+      .invoice-table{width:100%;border-collapse:collapse;table-layout:fixed}
+      .invoice-table th,.invoice-table td{padding:8px 10px;border:1px solid #e8cfcf;vertical-align:middle;word-break:break-word;white-space:normal}
+      .invoice-container{max-width:900px;margin:0 auto;background:#fdeceb;color:#3d2a2a}
+
+      @media print{
+        @page{size:A4;margin:12mm}
+        html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .invoice-container{width:100%;max-width:none;background:#fdeceb !important}
+        .no-print, .app-sidebar, .app-header {display:none!important}
+        body > #root > div {
+          display: block !important;
+        }
+        body > #root > div > *:not(main) {
+          display: none !important;
+        }
+        body main > div > div:not(.invoice-wrapper) {
+            display: none !important;
+        }
+      }
+
+      /* FullCalendar Custom Styles */
+      .fc .fc-toolbar { display: none; }
+      .fc .fc-daygrid-day-frame {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        padding: 2px;
+      }
+      .fc .fc-daygrid-day-top {
+        text-align: right;
+        padding-right: 4px;
+        flex-grow: 0;
+      }
+      .fc .fc-daygrid-day-events {
+        text-align: left;
+        padding: 0 2px 2px;
+        font-size: 0.65rem;
+        line-height: 1.2;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        flex-grow: 1;
+        overflow: hidden;
+      }
+      .fc .fc-daygrid-day.fc-day-today {
+        background-color: transparent !important;
+      }
+      .fc {
+        --fc-border-color: #D4A5A5;
+        --fc-daygrid-event-dot-width: 5px;
+      }
+
+      /* 3D Button Style */
+      .btn-3d{
+        display:inline-flex;align-items:center;gap:.5rem;
+        padding:.55rem .9rem;border-radius:12px;font-weight:600;
+        background: linear-gradient(180deg,var(--btn-bg,#ffffff),var(--btn-bg-dk,#f2f2f2));
+        box-shadow: 0 6px 14px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.08);
+        transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+        border:1px solid rgba(0,0,0,.06);
+        color: #3d2a2a; /* deep-rose */
+      }
+      .btn-3d:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.10)}
+      .btn-3d:active{ transform: translateY(0); box-shadow: 0 3px 8px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.08)}
+      .btn-3d:focus-visible{ outline:2px solid var(--btn-focus,#3B82F6); outline-offset:2px}
+
+
     </style>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Noto Sans Bengali', 'Inter', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
             },
             colors: {
               // Palette
@@ -94,13 +170,17 @@
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "react": "https://esm.sh/react@^19.1.1",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "recharts": "https://esm.sh/recharts@^3.1.2",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react": "https://esm.sh/react@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.23.1",
+    "recharts": "https://esm.sh/recharts@2.12.7",
     "jspdf": "https://esm.sh/jspdf@2.5.1",
     "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
-    "framer-motion": "https://esm.sh/framer-motion@^11.3.11"
+    "framer-motion": "https://esm.sh/framer-motion@^11.3.11",
+    "@fullcalendar/react": "https://esm.sh/@fullcalendar/react@6.1.10",
+    "@fullcalendar/core": "https://esm.sh/@fullcalendar/core@6.1.10",
+    "@fullcalendar/daygrid": "https://esm.sh/@fullcalendar/daygrid@6.1.10"
   }
 }
 </script>
