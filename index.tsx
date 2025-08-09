@@ -1,3 +1,5 @@
+import '@fullcalendar/core/index.css';
+import '@fullcalendar/daygrid/index.css';
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
