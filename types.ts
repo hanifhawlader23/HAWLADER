@@ -1,4 +1,5 @@
 
+
 export enum Status {
   Recibida = 'Recibida',
   EnProceso = 'En proceso',
@@ -16,7 +17,6 @@ export interface User {
   fullName: string;
   email: string;
   phone: string;
-  isApproved: boolean;
 }
 
 export interface Session {
@@ -153,7 +153,6 @@ export interface DataContextType {
   users: User[];
   currentUser: User | null;
   updateUserRole: (userId: number, role: 'admin' | 'user' | 'manager') => void;
-  approveUser: (userId: number) => void;
   deleteUser: (userId: number) => void;
   addEntry: (entry: Omit<Entry, 'code' | 'items'> & { items: (Partial<Omit<EntryItem, 'id' | 'unitPrice'>> & { description: string })[] }) => void;
   updateEntry: (entry: Entry) => void;

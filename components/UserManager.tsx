@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Select, Badge, Button, ConfirmationModal } from './ui';
@@ -7,9 +8,9 @@ import { User } from '../types';
 import { ExportControls } from './ExportControls';
 
 export const UserManager: React.FC = () => {
-    const { users, updateUserRole, currentUser, approveUser, deleteUser } = useData();
+    const { users, updateUserRole, currentUser, deleteUser } = useData();
     const { addToast } = useToast();
-    const [rejectionTarget, setRejectionTarget] = useState<User | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
     const handleRoleChange = (userId: number, role: 'admin' | 'user' | 'manager') => {
         if (currentUser?.id === userId) {
@@ -20,24 +21,19 @@ export const UserManager: React.FC = () => {
         addToast('User role updated successfully.', 'success');
     };
 
-    const handleApproveUser = (userId: number) => {
-        approveUser(userId);
-        addToast('User has been approved.', 'success');
-    };
-
-    const handleRejectUser = (user: User) => {
+    const handleDeleteUser = (user: User) => {
         if (currentUser?.id === user.id) {
-            addToast('You cannot reject or delete your own account.', 'error');
+            addToast('You cannot delete your own account.', 'error');
             return;
         }
-        setRejectionTarget(user);
+        setDeleteTarget(user);
     };
 
-    const confirmRejectUser = () => {
-        if (rejectionTarget) {
-            deleteUser(rejectionTarget.id);
-            addToast(`User ${rejectionTarget.fullName} has been rejected and removed.`, 'success');
-            setRejectionTarget(null);
+    const confirmDeleteUser = () => {
+        if (deleteTarget) {
+            deleteUser(deleteTarget.id);
+            addToast(`User ${deleteTarget.fullName} has been deleted.`, 'success');
+            setDeleteTarget(null);
         }
     };
     
@@ -47,7 +43,7 @@ export const UserManager: React.FC = () => {
         { title: 'Phone', dataKey: 'phone' as const },
         { title: 'Username', dataKey: 'username' as const },
         { title: 'Role', dataKey: 'role' as const },
-        { title: 'Status', dataKey: (item: User) => item.isApproved ? 'Approved' : 'Pending' },
+        { title: 'Status', dataKey: (item: User) => 'Active' },
     ];
 
     return (
@@ -65,7 +61,7 @@ export const UserManager: React.FC = () => {
                                 <th className="px-6 py-3">Contact</th>
                                 <th className="px-6 py-3">Username</th>
                                 <th className="px-6 py-3">Role</th>
-                                <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,19 +86,10 @@ export const UserManager: React.FC = () => {
                                             <option value="admin">Admin</option>
                                         </Select>
                                     </td>
-                                    <td data-label='Status' className="px-6 py-4">
-                                        {user.isApproved ? (
-                                            <Badge className="bg-green-200 text-green-800">Approved</Badge>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <Button size="sm" onClick={() => handleApproveUser(user.id)}>
-                                                    Approve
-                                                </Button>
-                                                <Button size="sm" variant="danger" onClick={() => handleRejectUser(user)}>
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        )}
+                                    <td data-label='Actions' className="px-6 py-4 text-center">
+                                       <Button size="sm" variant="danger" onClick={() => handleDeleteUser(user)} disabled={currentUser?.id === user.id}>
+                                            Delete
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -111,12 +98,12 @@ export const UserManager: React.FC = () => {
                 </div>
             </Card>
             <ConfirmationModal
-                isOpen={!!rejectionTarget}
-                onClose={() => setRejectionTarget(null)}
-                onConfirm={confirmRejectUser}
-                title='Confirm User Rejection'
-                message={`Are you sure you want to reject and delete the user account for ${rejectionTarget?.fullName}? This action cannot be undone.`}
-                confirmationWord="REJECT"
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={confirmDeleteUser}
+                title='Confirm User Deletion'
+                message={`Are you sure you want to delete the user account for ${deleteTarget?.fullName}? This action cannot be undone.`}
+                confirmationWord="DELETE"
             />
         </div>
     );

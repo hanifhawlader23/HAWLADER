@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, Modal } from './ui';
 import { useToast } from '../context/ToastContext';
@@ -38,14 +39,9 @@ export const LoginScreen: React.FC = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-        const success = await login(email, password);
-        if (!success) {
-            addToast('Login failed. Check credentials or approval status.', 'error');
-        }
-    } catch (err) {
-        console.error('Login failed:', err);
-        addToast('An unexpected error occurred during login.', 'error');
+    const success = await login(email, password);
+    if (!success) {
+        addToast('Wrong email or password.', 'error');
     }
   };
   

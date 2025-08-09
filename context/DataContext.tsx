@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
 import { Entry, Delivery, Status, FaltaEntry, Product, SizeQuantities, Client, CompanyDetails, Document, DocumentItem, DocumentType, EntryItem, DeliveryItem, User, DataContextType, Role, Session } from '../types';
 import { INITIAL_ENTRIES, INITIAL_DELIVERIES, INITIAL_PRODUCTS, INITIAL_CLIENTS, INITIAL_COMPANY_DETAILS, SIZES, INITIAL_USERS } from '../constants';
@@ -66,10 +67,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserRole = useCallback((userId: number, role: 'admin' | 'user' | 'manager') => {
     setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, role } : u));
-  }, []);
-
-  const approveUser = useCallback((userId: number) => {
-    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, isApproved: true } : u));
   }, []);
 
   const deleteUser = useCallback((userId: number) => {
@@ -442,7 +439,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <DataContext.Provider value={{ 
-        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, updateUserRole, approveUser, deleteUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
+        entries, deliveries, productCatalog, clients, companyDetails, documents, users, currentUser, updateUserRole, deleteUser, addEntry, updateEntry, deleteEntry, deleteMultipleEntries, addDelivery, updateEntryStatus, getNewEntryCode, getEntryByCode, getFaltaEntries, 
         isAdmin, isManager, getCalculatedQuantities, getCalculatedQuantitiesForItem, getDeliveryBreakdownForItem, addProduct, updateProduct, deleteProduct, deleteMultipleProducts, addClient, updateClient, deleteClient, deleteMultipleClients, updateCompanyDetails, getClientByName, saveDocument,
         deleteDocument, deleteMultipleDocuments, getNewDocumentNumber, getEntryFinancials, getRevenueData, getLatestDeliveryDateForEntry, getRemainingQuantitiesForItem
     }}>

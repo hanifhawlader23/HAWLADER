@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { INITIAL_USERS } from '../constants';
 import type { User as AppUser } from '../types';
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         if (raw) {
             const storedUser = JSON.parse(raw);
             const fullUser = allUsers.find(u => u.username === storedUser.email);
-            if (fullUser?.isApproved) {
+            if (fullUser) {
                 setUser(storedUser);
             } else {
                 localStorage.removeItem(LS); // Clean up invalid session
@@ -49,19 +50,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   // Login checks against the full user list
   const login = useCallback(async (email: string, password: string) => {
-    const foundUser = allUsers.find(u => u.username.toLowerCase() === email.toLowerCase());
+    const e = email.trim().toLowerCase();
+    const foundUser = allUsers.find(u => u.username.toLowerCase() === e);
 
-    if (foundUser && foundUser.password === password && foundUser.isApproved) {
+    if (foundUser && foundUser.password === password) {
         const u: User = { id: foundUser.username, email: foundUser.email, name: foundUser.fullName, role: foundUser.role };
-        try { localStorage.setItem(LS, JSON.stringify(u)); } catch {}
-        setUser(u);
-        return true;
-    }
-    
-    // Fallback for getting unblocked as requested, if no real user matches
-    if (!foundUser && email && password) {
-        console.warn("Dev login: No real user found. Authenticating with provided credentials.");
-        const u: User = { id: email, email };
         try { localStorage.setItem(LS, JSON.stringify(u)); } catch {}
         setUser(u);
         return true;

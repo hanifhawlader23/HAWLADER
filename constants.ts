@@ -1,14 +1,15 @@
 
+
 import { Status, User, Product, Entry, Delivery, Client, CompanyDetails } from './types';
 
 export const SIZES: string[] = ['0', '2', '4', '6', '8', '10', '12', '14', '16', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '8XL', '10XL'];
 
 export const INITIAL_USERS: User[] = [
-  { id: 1, username: 'admin@hawlader.eu', password: 'admin', role: 'admin', fullName: 'Admin User', email: 'admin@hawlader.eu', phone: '111222333', isApproved: true },
-  { id: 2, username: 'asad@hawlader.eu', password: 'asad', role: 'user', fullName: 'Asad Ahmed', email: 'asad@hawlader.eu', phone: '123456789', isApproved: true },
-  { id: 3, username: 'hanif@hawlader.eu', password: 'hanif', role: 'admin', fullName: 'Hanif Hawlader', email: 'hanif@hawlader.eu', phone: '987654321', isApproved: true },
-  { id: 4, username: 'choton@hawlader.eu', password: 'choton', role: 'user', fullName: 'Choton Khan', email: 'choton@hawlader.eu', phone: '112233445', isApproved: true },
-  { id: 5, username: 'johurul@hawlader.eu', password: 'johurul', role: 'user', fullName: 'Johurul Islam', email: 'johurul@hawlader.eu', phone: '556677889', isApproved: true },
+  { id: 1, username: 'admin@hawlader.eu', password: 'admin', role: 'admin', fullName: 'Admin User', email: 'admin@hawlader.eu', phone: '111222333' },
+  { id: 2, username: 'asad@hawlader.eu', password: 'asad', role: 'user', fullName: 'Asad Ahmed', email: 'asad@hawlader.eu', phone: '123456789' },
+  { id: 3, username: 'hanif@hawlader.eu', password: 'hanif', role: 'admin', fullName: 'Hanif Hawlader', email: 'hanif@hawlader.eu', phone: '987654321' },
+  { id: 4, username: 'choton@hawlader.eu', password: 'choton', role: 'user', fullName: 'Choton Khan', email: 'choton@hawlader.eu', phone: '112233445' },
+  { id: 5, username: 'johurul@hawlader.eu', password: 'johurul', role: 'user', fullName: 'Johurul Islam', email: 'johurul@hawlader.eu', phone: '556677889' },
 ];
 
 export const STATUS_COLORS: Record<Status, string> = {

@@ -1,5 +1,7 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
+import { Routes, Route, Navigate, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useData } from './context/DataContext';
 import { useAuth } from './context/AuthContext';
 import { Dashboard } from './components/Dashboard';
@@ -13,12 +15,11 @@ import { InvoiceHistory } from './components/InvoiceHistory';
 import { CompanyDetailsManager } from './components/CompanyDetails';
 import { LoginScreen } from './components/LoginScreen';
 import { UserManager } from './components/UserManager';
-import { Button, MenuIcon } from './components/ui';
-import { useToast } from './context/ToastContext';
+import { MenuIcon } from './components/ui';
 import { FaltaView } from './components/FaltaView';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
+// --- ICONS ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
 const ListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>;
 const TruckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>;
@@ -32,67 +33,29 @@ const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" heig
 const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
 
 
-type View = 'dashboard' | 'entries' | 'delivered' | 'prefacturado' | 'invoiceWorkbench' | 'invoiceHistory' | 'catalog' | 'clients' | 'company' | 'users' | 'falta';
+const allNavItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: <HomeIcon />, roles: ['admin', 'manager', 'user'] },
+    { path: '/entries', label: 'Entries', icon: <ListIcon />, roles: ['admin', 'manager', 'user'] },
+    { path: '/delivered', label: 'Delivered', icon: <TruckIcon />, roles: ['admin', 'manager', 'user'] },
+    { path: '/falta', label: 'Pending Delivery', icon: <BoxIcon />, roles: ['admin', 'manager', 'user'] },
+    { path: '/prefacturado', label: 'Prefacturado', icon: <FileCheckIcon />, roles: ['admin', 'manager', 'user'] },
+    { path: '/invoice-workbench', label: 'Invoice Workbench', icon: <DraftIcon />, roles: ['admin'] },
+    { path: '/invoice-history', label: 'Invoice History', icon: <HistoryIcon />, roles: ['admin'] },
+    { path: '/catalog', label: 'Product Catalog', icon: <BookIcon />, roles: ['admin'] },
+    { path: '/clients', label: 'Clients', icon: <UsersIcon />, roles: ['admin'] },
+    { path: '/company', label: 'Company Details', icon: <BuildingIcon />, roles: ['admin'] },
+    { path: '/users', label: 'User Management', icon: <UsersIcon />, roles: ['admin'] },
+];
 
-const App = () => {
-    const [view, setView] = useState<View>('dashboard');
+const MainLayout = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    
-    const { isAuthenticated, loading, logout } = useAuth();
-    const { users, currentUser, isAdmin } = useData();
-    const { addToast } = useToast();
+    const { currentUser } = useData();
+    const { logout } = useAuth();
+    const location = useLocation();
 
-    const pendingApprovalsCount = useMemo(() => {
-        return users.filter(user => !user.isApproved).length;
-    }, [users]);
-
-    if (loading) {
-        return <div className="flex items-center justify-center h-screen w-screen bg-brand-bg text-brand-accent">Loading...</div>;
-    }
-
-    if (!isAuthenticated) {
-        return <LoginScreen />;
-    }
-    
-    const renderView = () => {
-        switch (view) {
-            case 'dashboard': return <Dashboard />;
-            case 'entries': return <EntriesManager />;
-            case 'delivered': return <DeliveredView />;
-            case 'prefacturado': return <PrefacturadoView />;
-            case 'falta': return <FaltaView />;
-            case 'invoiceWorkbench': return isAdmin ? <InvoiceWorkbench /> : null;
-            case 'invoiceHistory': return isAdmin ? <InvoiceHistory /> : null;
-            case 'catalog': return isAdmin ? <ProductCatalogManager /> : null;
-            case 'clients': return isAdmin ? <ClientManager /> : null;
-            case 'company': return isAdmin ? <CompanyDetailsManager /> : null;
-            case 'users': return isAdmin ? <UserManager /> : null;
-            default: return <Dashboard />;
-        }
-    };
-    
-    const allNavItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'entries', label: 'Entries', icon: <ListIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'delivered', label: 'Delivered', icon: <TruckIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'falta', label: 'Pending Delivery', icon: <BoxIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'prefacturado', label: 'Prefacturado', icon: <FileCheckIcon />, roles: ['admin', 'manager', 'user'] },
-        { id: 'invoiceWorkbench', label: 'Invoice Workbench', icon: <DraftIcon />, roles: ['admin'] },
-        { id: 'invoiceHistory', label: 'Invoice History', icon: <HistoryIcon />, roles: ['admin'] },
-        { id: 'catalog', label: 'Product Catalog', icon: <BookIcon />, roles: ['admin'] },
-        { id: 'clients', label: 'Clients', icon: <UsersIcon />, roles: ['admin'] },
-        { id: 'company', label: 'Company Details', icon: <BuildingIcon />, roles: ['admin'] },
-        { id: 'users', label: 'User Management', icon: <UsersIcon />, roles: ['admin'] },
-    ];
-    
     const getVisibleNavItems = (items: typeof allNavItems) => {
-      const effectiveRole = currentUser?.role || 'user';
-      return items.filter(item => item.roles.includes(effectiveRole));
-    };
-
-    const handleNavClick = (selectedView: View) => {
-        setView(selectedView);
-        setSidebarOpen(false); // Close sidebar on mobile after navigation
+        const effectiveRole = currentUser?.role || 'user';
+        return items.filter(item => item.roles.includes(effectiveRole));
     };
 
     return (
@@ -120,13 +83,15 @@ const App = () => {
                 </div>
                 <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                     {getVisibleNavItems(allNavItems).map(item => (
-                         <button key={item.id} onClick={() => handleNavClick(item.id as View)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${view === item.id ? 'bg-brand-accent text-brand-text-on-accent shadow-md' : 'hover:bg-brand-secondary hover:text-brand-text-primary'}`}>
+                         <NavLink 
+                            key={item.path} 
+                            to={item.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className={({ isActive }) => `w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-brand-accent text-brand-text-on-accent shadow-md' : 'hover:bg-brand-secondary hover:text-brand-text-primary'}`}
+                         >
                             {item.icon}
                             <span className="font-semibold flex-grow text-left">{item.label}</span>
-                            {item.id === 'users' && isAdmin && pendingApprovalsCount > 0 && (
-                                <span className="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{pendingApprovalsCount}</span>
-                            )}
-                        </button>
+                        </NavLink>
                     ))}
                 </nav>
                 <div className="px-4 py-4 border-t border-brand-tertiary mt-auto">
@@ -140,12 +105,10 @@ const App = () => {
                         </div>
                     </div>
                     
-                    <div className="space-y-2">
-                        <button onClick={logout} className="w-full btn-3d">
-                            <LogoutIcon />
-                            <span className="ml-2">Logout</span>
-                        </button>
-                    </div>
+                    <button onClick={logout} className="w-full btn-3d bg-brand-secondary">
+                        <LogoutIcon />
+                        <span className="ml-2">Logout</span>
+                    </button>
                 </div>
             </aside>
 
@@ -153,17 +116,67 @@ const App = () => {
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto mt-14 lg:mt-0">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={view}
+                        key={location.pathname}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {renderView()}
+                        <Outlet />
                     </motion.div>
                 </AnimatePresence>
             </main>
         </div>
+    );
+};
+
+const ProtectedRoute: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen w-screen bg-brand-bg text-brand-accent">Loading Application...</div>;
+  }
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+const AdminRoute: React.FC<{children: React.ReactNode}> = ({ children }) => {
+    const { isAdmin } = useData();
+    return isAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
+}
+
+const App = () => {
+    const { isAuthenticated, loading } = useAuth();
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-screen w-screen bg-brand-bg text-brand-accent">Initializing...</div>;
+    }
+
+    return (
+        <Routes>
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginScreen />} />
+            <Route path="/*" element={
+                <ProtectedRoute>
+                    <Routes>
+                        <Route element={<MainLayout />}>
+                            <Route index element={<Navigate to="/dashboard" replace />} />
+                            <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="entries" element={<EntriesManager />} />
+                            <Route path="delivered" element={<DeliveredView />} />
+                            <Route path="falta" element={<FaltaView />} />
+                            <Route path="prefacturado" element={<PrefacturadoView />} />
+                            
+                            <Route path="invoice-workbench" element={<AdminRoute><InvoiceWorkbench /></AdminRoute>} />
+                            <Route path="invoice-history" element={<AdminRoute><InvoiceHistory /></AdminRoute>} />
+                            <Route path="catalog" element={<AdminRoute><ProductCatalogManager /></AdminRoute>} />
+                            <Route path="clients" element={<AdminRoute><ClientManager /></AdminRoute>} />
+                            <Route path="company" element={<AdminRoute><CompanyDetailsManager /></AdminRoute>} />
+                            <Route path="users" element={<AdminRoute><UserManager /></AdminRoute>} />
+
+                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        </Route>
+                    </Routes>
+                </ProtectedRoute>
+            }/>
+        </Routes>
     );
 };
 

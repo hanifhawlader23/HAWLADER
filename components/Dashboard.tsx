@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Card, Select, Modal, Input, Badge, Button, ConfirmationModal } from './ui';
@@ -6,13 +5,13 @@ import { useToast } from '../context/ToastContext';
 import { getClientColorClass, STATUS_COLORS } from '../constants';
 import { Entry, FaltaEntry, FilterState, User } from '../types';
 import { EntryDetailView } from './EntryDetailView';
-import { FilterBar, filterDocumentsByDate, filterEntriesByDate } from './FilterBar';
+import { FilterBar, filterEntriesByDate } from './FilterBar';
 import { motion, Variants } from 'framer-motion';
 import { WorkCalendar } from './Calendar/WorkCalendar';
 import { DashboardCharts } from './Dashboard/Charts';
 
 export const Dashboard = () => {
-  const { entries, deliveries, getCalculatedQuantities, isAdmin, clients, getRevenueData, documents, users, approveUser, deleteUser } = useData();
+  const { entries, deliveries, getCalculatedQuantities, isAdmin, clients, getRevenueData, documents, users } = useData();
   const [filters, setFilters] = useState<Omit<FilterState, 'status'>>({
     dateRange: 'all',
     clientId: 'all',
@@ -21,28 +20,7 @@ export const Dashboard = () => {
   });
   const [modalData, setModalData] = useState<{ title: string; entries: (Entry | FaltaEntry)[] } | null>(null);
   const [viewingEntry, setViewingEntry] = useState<Entry | null>(null);
-  const [rejectionTarget, setRejectionTarget] = useState<User | null>(null);
-  const { addToast } = useToast();
-
-  const pendingUsers = useMemo(() => users.filter(u => !u.isApproved), [users]);
-
-  const handleApprove = (userId: number) => {
-    approveUser(userId);
-    addToast('User has been approved.', 'success');
-  };
-
-  const handleReject = (user: User) => {
-    setRejectionTarget(user);
-  };
-
-  const confirmReject = () => {
-    if (rejectionTarget) {
-      deleteUser(rejectionTarget.id);
-      addToast(`User ${rejectionTarget.fullName} has been rejected and removed.`, 'success');
-      setRejectionTarget(null);
-    }
-  };
-
+  
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
         const client = clients.find(c => c.name === e.client);
@@ -184,32 +162,6 @@ export const Dashboard = () => {
         )}
       </motion.div>
 
-      {isAdmin && pendingUsers.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6">
-            <Card>
-                <h3 className="text-xl font-semibold text-brand-text-primary mb-4">Pending User Approvals ({pendingUsers.length})</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <tbody>
-                            {pendingUsers.map(user => (
-                                <tr key={user.id} className="border-b border-brand-tertiary last:border-b-0 hover:bg-brand-secondary/50">
-                                    <td className="p-3">
-                                        <div className="font-semibold text-brand-text-primary">{user.fullName}</div>
-                                        <div className="text-xs text-brand-text-secondary">{user.email}</div>
-                                    </td>
-                                    <td className="p-3 text-right">
-                                        <Button size="sm" onClick={() => handleApprove(user.id)} className="mr-2">Approve</Button>
-                                        <Button size="sm" variant="danger" onClick={() => handleReject(user)}>Reject</Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-        </motion.div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
               <Card>
@@ -252,14 +204,6 @@ export const Dashboard = () => {
             {viewingEntry && <EntryDetailView entry={viewingEntry} />}
         </Modal>
 
-        <ConfirmationModal
-            isOpen={!!rejectionTarget}
-            onClose={() => setRejectionTarget(null)}
-            onConfirm={confirmReject}
-            title="Confirm User Rejection"
-            message={`Are you sure you want to reject and delete the user account for ${rejectionTarget?.fullName}? This action cannot be undone.`}
-            confirmationWord="REJECT"
-        />
     </div>
   );
 };
